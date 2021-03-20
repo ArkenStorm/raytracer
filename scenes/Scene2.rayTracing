@@ -1,0 +1,10 @@
+CameraLookAt 0 0 0
+CameraLookFrom 0 0 1.2
+CameraLookUp 0 1 0
+FieldOfView 55
+DirectionToLight 0 1 0 LightColor 1 1 1
+AmbientLight 0 0 0
+BackgroundColor .2 .2 .2
+Sphere Center 0 .3 0 Radius .2 Kd 0.0 Ks 0.9 Ka 0.1 Od .75 .75 .75 Os 1.0 1.0 1.0 Kgls 10
+Triangle 0 -.5 .5   1 .5 0 0 -.5 -.5   Kd 0.9 Ks 0.0 Ka 0.1 Od 0 0 1 Os 1.0 1.0 1.0 Kgls 4
+Triangle 0 -.5 .5   0 -.5 -.5   -1 .5 0 Kd 0.9 Ks 0.0 Ka 0.1 Od 1 1 0 Os 1.0 1.0 1.0 Kgls 4

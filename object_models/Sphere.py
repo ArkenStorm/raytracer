@@ -2,8 +2,8 @@ from object_models.Object import Object
 
 
 class Sphere(Object):
-	def __init__(self, center, radius, kd, ks, ka, od, os, kgls):
-		super().__init__(kd, ks, ka, od, os, kgls)
+	def __init__(self, center, radius, material):
+		super().__init__(material)
 		self.center = center  # center of the sphere
 		self.radius = radius  # radius of the sphere
 

@@ -4,8 +4,8 @@ import custom_math as cm
 
 
 class Triangle(Object):
-	def __init__(self, vertices, kd, ks, ka, od, os, kgls):
-		super().__init__(kd, ks, ka, od, os, kgls)
+	def __init__(self, vertices, material):
+		super().__init__(material)
 		self.vertices = vertices  # list of vertices to render
 		self.normal = self.compute_normal()
 

@@ -1,6 +1,72 @@
+import numpy as np
+from environment import Camera
+from object_models import *
+from materials import *
+import materials
+
+
 class Scene:
-	def __init__(self, ld, lc, al, bc):
-		self.light_direction = ld
-		self.light_color = lc
-		self.ambient_light = al
-		self.background_color = bc
+	def __init__(self):  # TODO: account for multiple directional light sources?
+		self.light_direction = None
+		self.light_color = None
+		self.ambient_light = None
+		self.background_color = None
+
+	def parse(self, filepath):  # TODO: bounding volumes for objects
+		scene_info = open(filepath)
+		objects = []
+		custom_materials = []
+
+		camera_vals = scene_info.readline().split()
+		look_at, look_from, look_up, fov = np.array(list(map(float, camera_vals[1:4]))),\
+										   np.array(list(map(float, camera_vals[4:7]))),\
+										   np.array(list(map(float, camera_vals[7:10]))), float(camera_vals[10])
+
+		# look_at = np.array(list(map(float, scene_info.readline().split()[1:])))
+		# look_from = np.array(list(map(float, scene_info.readline().split()[1:])))
+		# look_up = np.array(list(map(float, scene_info.readline().split()[1:])))
+		# fov = 2 * float(scene_info.readline().split()[1])  # example scenes give pre-halved FoV
+		camera = Camera(look_at, look_from, look_up, fov)
+
+		self.background_color = np.array(list(map(float, scene_info.readline().split()[1:])))
+		self.ambient_light = np.array(list(map(float, scene_info.readline().split()[1:])))
+
+		while line := scene_info.readline().split():
+			if line[0].lower() == "directional_light":
+				self.light_direction, self.light_color = np.array(list(map(float, line[1:4]))), \
+														 np.array(list(map(float, line[4:])))
+			elif line[0].lower == "point_light":  # TODO: Actually use this
+				point_light_pos, point_light_color = np.array(list(map(float, line[1:4]))), \
+													 np.array(list(map(float, line[4:])))
+			# TODO: Area lights, sphere lights
+			if line[0].lower() == "material":
+				kd = float(line[2])
+				ks = float(line[4])
+				ka = float(line[6])
+				od = np.array(list(map(float, line[8:11])))
+				os = np.array(list(map(float, line[12:15])))
+				kgls = int(line[16])
+				ri = float(line[18])
+				custom_materials.append(Material(kd, ks, ka, od, os, kgls, ri))
+			elif line[0].lower() == "sphere":
+				if line[1].lower() == "custom":
+					mat = custom_materials[int(line[2])]
+				else:
+					mat = getattr(materials, line[1])
+					# TODO: error check
+				center = list(map(float, line[2:5]))
+				radius = float(line[6])
+
+				objects.append(Sphere(center, radius, mat))
+			elif line[0].lower() == "triangle":
+				if line[1].lower() == "custom":
+					mat = custom_materials[int(line[2])]
+				else:
+					mat = getattr(materials, line[1])
+				vertices = [np.array(list(map(float, line[3:6]))), np.array(list(map(float, line[6:9]))),
+							np.array(list(map(float, line[9:])))]
+
+				objects.append(Triangle(vertices, mat))
+			else:
+				pass  # render other polygons eventually
+		return self, objects, camera

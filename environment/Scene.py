@@ -11,6 +11,7 @@ class Scene:
 		self.light_color = None
 		self.ambient_light = None
 		self.background_color = None
+		self.point_lights = []  # TODO: make a list of all lights
 
 	def parse(self, filepath):  # TODO: bounding volumes for objects
 		scene_info = open(filepath)
@@ -22,10 +23,6 @@ class Scene:
 										   np.array(list(map(float, camera_vals[4:7]))),\
 										   np.array(list(map(float, camera_vals[7:10]))), float(camera_vals[10])
 
-		# look_at = np.array(list(map(float, scene_info.readline().split()[1:])))
-		# look_from = np.array(list(map(float, scene_info.readline().split()[1:])))
-		# look_up = np.array(list(map(float, scene_info.readline().split()[1:])))
-		# fov = 2 * float(scene_info.readline().split()[1])  # example scenes give pre-halved FoV
 		camera = Camera(look_at, look_from, look_up, fov)
 
 		self.background_color = np.array(list(map(float, scene_info.readline().split()[1:])))
@@ -46,7 +43,7 @@ class Scene:
 				od = np.array(list(map(float, line[8:11])))
 				os = np.array(list(map(float, line[12:15])))
 				kgls = int(line[16])
-				ri = float(line[18])
+				ri = None if line[18] == "None" else float(line[18])
 				custom_materials.append(Material(kd, ks, ka, od, os, kgls, ri))
 			elif line[0].lower() == "sphere":
 				if line[1].lower() == "custom":

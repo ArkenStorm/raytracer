@@ -2,13 +2,14 @@ from object_models import *
 from environment import *
 import custom_math as cm
 
-image_height = 100
-image_width = 100
+image_height = 500
+image_width = 500
 epsilon = 0.0000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
-num_reflections = 4  # max ray tree depth
+num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
+subdivisions = 1  # number of subdivisions in each dimension
 
 scene_name = "655Lab1.ppm"
 render = [[0 for j in range(image_width)] for i in range(image_height)]
@@ -80,13 +81,12 @@ def compute_intersections(r0, rd, spawn_depth):
 	illumination = np.clip(illumination + obj_luminance, 0.0, 1.0)  # obj_luminance should never be None
 
 	# reflection ray
-	if intersect_obj.material.ks > 0 and spawn_depth > 0:  # change to use reflectivity/transparency instead of specular
-		# calculate and trace reflection/transmission ray (whether reflective or transparent surface)
+	if intersect_obj.material.ks > 0 and spawn_depth > 0:  # calculate and trace reflection ray
 		reflect_point = intersect_point + epsilon * reflect_direction
 		recursive_color, recursive_intersect = compute_intersections(reflect_point, reflect_direction, spawn_depth - 1)
 		additive_color = recursive_color if recursive_color is not None else scene.background_color
 		illumination = np.clip(illumination + additive_color * intersect_obj.material.ks, 0.0, 1.0)
-	if intersect_obj.material.ri > 0 and spawn_depth > 0:  # change to "is not 0" or "is not None"?
+	if intersect_obj.material.ri is not None and spawn_depth > 0:  # calculate and trace refraction ray
 		pass
 	return illumination, intersect_point
 
@@ -110,9 +110,13 @@ def write_to_ppm():
 scene, objects, camera = Scene().parse("scenes/655Lab1.rayTracing")
 for i in range(image_height):
 	for j in range(image_width):
-		ray = compute_primary_ray(i, j)[:3]
-		color, intersection = compute_intersections(camera.look_from, ray, num_reflections)
-		pixel_color = color if color is not None else scene.background_color
-		render[i][j] = pixel_color
+		step = 1 / subdivisions
+		subrays = [(i + step * n, j + step * p) for n in range(subdivisions) for p in range(subdivisions)]
+		pixel_color = 0
+		for x, y in subrays:
+			ray = compute_primary_ray(x, y)[:3]
+			color, intersection = compute_intersections(camera.look_from, ray, num_reflections)
+			pixel_color += color if color is not None else scene.background_color
+		render[i][j] = pixel_color / (subdivisions**2)  # average pixel color by number of subrays
 
 write_to_ppm()

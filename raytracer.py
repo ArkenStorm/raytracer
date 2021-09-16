@@ -2,8 +2,8 @@ from object_models import *
 from environment import *
 import custom_math as cm
 
-image_height = 500
-image_width = 500
+image_height = 200
+image_width = 200
 epsilon = 0.0000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
@@ -42,13 +42,13 @@ def compute_primary_ray(i, j):  # i, j are viewport points
 	return screen_to_world @ translate @ ray_screen  # ray in world space
 
 
-def is_in_shadow(point):
+def is_in_shadow(point, light):
 	global epsilon
-	shadow_direction = scene.light_direction - point
+
+	shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
 	shadow_direction = shadow_direction / np.linalg.norm(shadow_direction)
-	# ignore shadow_color/obj from this, it doesn't matter
-	shadow_color, shadow_intersect = compute_intersections(point + epsilon * shadow_direction,
-														   shadow_direction, 0)
+	# shadow color important?
+	shadow_color, shadow_intersect = compute_intersections(point + epsilon * shadow_direction, shadow_direction, 0)
 	return True if shadow_intersect is not None else False
 
 
@@ -73,12 +73,16 @@ def compute_intersections(r0, rd, spawn_depth):
 
 	object_norm = intersect_obj.compute_normal(intersect_point)
 	reflect_direction = rd - 2 * object_norm * (np.dot(rd, object_norm))
-	light_vector = scene.light_direction - 2 * object_norm * (np.dot(scene.light_direction, object_norm))
-	light_reflection = light_vector / np.linalg.norm(light_vector)
-
-	obj_luminance = intersect_obj.luminance(scene.ambient_light, scene.light_color, scene.light_direction,
-											object_norm, rd, light_reflection, is_in_shadow(intersect_point))
-	illumination = np.clip(illumination + obj_luminance, 0.0, 1.0)  # obj_luminance should never be None
+	for light_source in scene.light_sources:
+		# TODO: update for area lights in the future
+		light_direction = light_source["direction"] if "direction" in light_source else light_source["pos"]
+		light_vector = light_direction - 2 * object_norm * (np.dot(light_direction, object_norm))
+		light_reflection = light_vector / np.linalg.norm(light_vector)
+		obj_luminance = intersect_obj.luminance(scene.ambient_light, scene.light_color, light_direction, object_norm,
+												rd, light_reflection, is_in_shadow(intersect_point, light_source))
+		illumination += illumination + obj_luminance  # obj_luminance should never be None
+	# average the illumination of all the lights shining on the object
+	illumination = np.clip(illumination / len(scene.light_sources), 0.0, 1.0)
 
 	# reflection ray
 	if intersect_obj.material.ks > 0 and spawn_depth > 0:  # calculate and trace reflection ray

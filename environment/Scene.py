@@ -11,7 +11,7 @@ class Scene:
 		self.light_color = None
 		self.ambient_light = None
 		self.background_color = None
-		self.point_lights = []  # TODO: make a list of all lights
+		self.light_sources = []  # TODO: make a list of all lights
 
 	def parse(self, filepath):  # TODO: bounding volumes for objects
 		scene_info = open(filepath)
@@ -32,9 +32,12 @@ class Scene:
 			if line[0].lower() == "directional_light":
 				self.light_direction, self.light_color = np.array(list(map(float, line[1:4]))), \
 														 np.array(list(map(float, line[4:])))
-			elif line[0].lower == "point_light":  # TODO: Actually use this
+				# TODO: edit to not have the self variables
+				self.light_sources.append({"direction": self.light_direction, "color": self.light_color})
+			elif line[0].lower() == "point_light":
 				point_light_pos, point_light_color = np.array(list(map(float, line[1:4]))), \
 													 np.array(list(map(float, line[4:])))
+				self.light_sources.append({"pos": point_light_pos, "color": point_light_color})
 			# TODO: Area lights, sphere lights
 			if line[0].lower() == "material":
 				kd = float(line[2])
@@ -45,7 +48,7 @@ class Scene:
 				kgls = int(line[16])
 				ri = None if line[18] == "None" else float(line[18])
 				custom_materials.append(Material(kd, ks, ka, od, os, kgls, ri))
-			elif line[0].lower() == "sphere":
+			elif line[0].lower() == "sphere":  # TODO: indices are wrong when not using custom materials
 				if line[1].lower() == "custom":
 					mat = custom_materials[int(line[2])]
 				else:

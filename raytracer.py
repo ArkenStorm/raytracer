@@ -72,13 +72,12 @@ def compute_intersections(r0, rd, spawn_depth):
 		return None, None  # no intersection
 
 	object_norm = intersect_obj.compute_normal(intersect_point)
-	reflect_direction = rd - 2 * object_norm * (np.dot(rd, object_norm))
 	for light_source in scene.light_sources:
 		# TODO: update for area lights in the future
 		light_direction = light_source["direction"] if "direction" in light_source else light_source["pos"]
 		light_vector = light_direction - 2 * object_norm * (np.dot(light_direction, object_norm))
 		light_reflection = light_vector / np.linalg.norm(light_vector)
-		obj_luminance = intersect_obj.luminance(scene.ambient_light, scene.light_color, light_direction, object_norm,
+		obj_luminance = intersect_obj.luminance(scene.ambient_light, light_source["color"], light_direction, object_norm,
 												rd, light_reflection, is_in_shadow(intersect_point, light_source))
 		illumination += illumination + obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
@@ -86,12 +85,24 @@ def compute_intersections(r0, rd, spawn_depth):
 
 	# reflection ray
 	if intersect_obj.material.ks > 0 and spawn_depth > 0:  # calculate and trace reflection ray
+		reflect_direction = rd - 2 * object_norm * (np.dot(rd, object_norm))
 		reflect_point = intersect_point + epsilon * reflect_direction
 		recursive_color, recursive_intersect = compute_intersections(reflect_point, reflect_direction, spawn_depth - 1)
 		additive_color = recursive_color if recursive_color is not None else scene.background_color
 		illumination = np.clip(illumination + additive_color * intersect_obj.material.ks, 0.0, 1.0)
-	if intersect_obj.material.ri is not None and spawn_depth > 0:  # calculate and trace refraction ray
-		pass
+	if intersect_obj.material.ri is not None:  # calculate and trace refraction ray
+		# methinks this is going to need some reworking
+		cos_theta = np.dot(object_norm, rd) / np.dot(np.linalg.norm(object_norm), np.linalg.norm(rd))
+		refract_direction = object_norm * rd + \
+							(object_norm * cos_theta - (1 + (object_norm ** 2) * ((cos_theta ** 2) - 1)) ** 0.5)
+		start_refract_point = intersect_point + epsilon * refract_direction
+		# this only works with spheres right now / doesn't work because internal intersection
+		end_refract_point = intersect_obj.intersect(start_refract_point, refract_direction)
+		# the ray goes back to the original direction
+		recursive_color, recursive_intersect = compute_intersections(end_refract_point, rd, spawn_depth - 1)
+		additive_color = recursive_color if recursive_color is not None else scene.background_color
+		illumination = np.clip(illumination + additive_color * intersect_obj.material.ks, 0.0, 1.0)
+
 	return illumination, intersect_point
 
 
@@ -121,6 +132,6 @@ for i in range(image_height):
 			ray = compute_primary_ray(x, y)[:3]
 			color, intersection = compute_intersections(camera.look_from, ray, num_reflections)
 			pixel_color += color if color is not None else scene.background_color
-		render[i][j] = pixel_color / (subdivisions**2)  # average pixel color by number of subrays
+		render[i][j] = pixel_color / (subdivisions ** 2)  # average pixel color by number of subrays
 
 write_to_ppm()

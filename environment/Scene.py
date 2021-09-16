@@ -6,12 +6,10 @@ import materials
 
 
 class Scene:
-	def __init__(self):  # TODO: account for multiple directional light sources?
-		self.light_direction = None
-		self.light_color = None
+	def __init__(self):
 		self.ambient_light = None
 		self.background_color = None
-		self.light_sources = []  # TODO: make a list of all lights
+		self.light_sources = []
 
 	def parse(self, filepath):  # TODO: bounding volumes for objects
 		scene_info = open(filepath)
@@ -30,10 +28,9 @@ class Scene:
 
 		while line := scene_info.readline().split():
 			if line[0].lower() == "directional_light":
-				self.light_direction, self.light_color = np.array(list(map(float, line[1:4]))), \
+				light_direction, light_color = np.array(list(map(float, line[1:4]))), \
 														 np.array(list(map(float, line[4:])))
-				# TODO: edit to not have the self variables
-				self.light_sources.append({"direction": self.light_direction, "color": self.light_color})
+				self.light_sources.append({"direction": light_direction, "color": light_color})
 			elif line[0].lower() == "point_light":
 				point_light_pos, point_light_color = np.array(list(map(float, line[1:4]))), \
 													 np.array(list(map(float, line[4:])))
@@ -48,23 +45,28 @@ class Scene:
 				kgls = int(line[16])
 				ri = None if line[18] == "None" else float(line[18])
 				custom_materials.append(Material(kd, ks, ka, od, os, kgls, ri))
-			elif line[0].lower() == "sphere":  # TODO: indices are wrong when not using custom materials
+			elif line[0].lower() == "sphere":
 				if line[1].lower() == "custom":
+					coord_start = 3
 					mat = custom_materials[int(line[2])]
 				else:
+					coord_start = 2
 					mat = getattr(materials, line[1])
 					# TODO: error check
-				center = list(map(float, line[2:5]))
-				radius = float(line[6])
+				center = list(map(float, line[coord_start:coord_start + 3]))
+				radius = float(line[coord_start + 3])
 
 				objects.append(Sphere(center, radius, mat))
 			elif line[0].lower() == "triangle":
 				if line[1].lower() == "custom":
+					coord_start = 3
 					mat = custom_materials[int(line[2])]
 				else:
+					coord_start = 2
 					mat = getattr(materials, line[1])
-				vertices = [np.array(list(map(float, line[3:6]))), np.array(list(map(float, line[6:9]))),
-							np.array(list(map(float, line[9:])))]
+				vertices = [np.array(list(map(float, line[coord_start:coord_start + 3]))),
+							np.array(list(map(float, line[coord_start + 3:coord_start + 6]))),
+							np.array(list(map(float, line[coord_start + 6:])))]
 
 				objects.append(Triangle(vertices, mat))
 			else:

@@ -4,14 +4,14 @@ import custom_math as cm
 
 image_height = 200
 image_width = 200
-epsilon = 0.0000001
+epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
 num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
 subdivisions = 1  # number of subdivisions in each dimension
 
-scene_name = "655Lab1.ppm"
+scene_name = "455Custom++.ppm"
 render = [[0 for j in range(image_width)] for i in range(image_height)]
 
 
@@ -53,7 +53,7 @@ def is_in_shadow(point, light):
 
 
 # r0 == ray origin, rd == ray direction;
-def compute_intersections(r0, rd, spawn_depth):
+def compute_intersections(r0, rd, spawn_depth):  # TODO: split into more functions
 	global objects, epsilon
 
 	min_dist = float('inf')
@@ -83,25 +83,30 @@ def compute_intersections(r0, rd, spawn_depth):
 	# average the illumination of all the lights shining on the object
 	illumination = np.clip(illumination / len(scene.light_sources), 0.0, 1.0)
 
-	# reflection ray
-	if intersect_obj.material.ks > 0 and spawn_depth > 0:  # calculate and trace reflection ray
+	# calculate and trace reflection ray
+	if intersect_obj.material.ks > 0 and spawn_depth > 0:
 		reflect_direction = rd - 2 * object_norm * (np.dot(rd, object_norm))
 		reflect_point = intersect_point + epsilon * reflect_direction
 		recursive_color, recursive_intersect = compute_intersections(reflect_point, reflect_direction, spawn_depth - 1)
 		additive_color = recursive_color if recursive_color is not None else scene.background_color
 		illumination = np.clip(illumination + additive_color * intersect_obj.material.ks, 0.0, 1.0)
-	if intersect_obj.material.ri is not None:  # calculate and trace refraction ray
-		# methinks this is going to need some reworking
-		cos_theta = np.dot(object_norm, rd) / np.dot(np.linalg.norm(object_norm), np.linalg.norm(rd))
-		refract_direction = object_norm * rd + \
-							(object_norm * cos_theta - (1 + (object_norm ** 2) * ((cos_theta ** 2) - 1)) ** 0.5)
+
+	# calculate and trace refraction ray; spawn depth checked because of internal refraction
+	if intersect_obj.material.ri is not None and spawn_depth > 0:
+		# TODO: keep track of what material the ray is currently in for internal refraction
+		index_refraction = 1.003 / intersect_obj.material.ri
+		cos_theta = np.dot(object_norm, -rd) / (np.linalg.norm(object_norm) * np.linalg.norm(rd))
+		refract_direction = index_refraction * rd + \
+							(index_refraction * cos_theta - (1 + (index_refraction ** 2) * ((cos_theta ** 2) - 1)) ** 0.5) * object_norm
 		start_refract_point = intersect_point + epsilon * refract_direction
-		# this only works with spheres right now / doesn't work because internal intersection
-		end_refract_point = intersect_obj.intersect(start_refract_point, refract_direction)
-		# the ray goes back to the original direction
-		recursive_color, recursive_intersect = compute_intersections(end_refract_point, rd, spawn_depth - 1)
+		# this only works with spheres right now
+		end_refract_point = intersect_obj.intersect(start_refract_point, refract_direction) + epsilon * refract_direction
+
+		# the ray goes back to the original direction <-- is this true?
+		# TODO: Handle internal refraction
+		recursive_color, recursive_intersect = compute_intersections(end_refract_point, rd, spawn_depth)
 		additive_color = recursive_color if recursive_color is not None else scene.background_color
-		illumination = np.clip(illumination + additive_color * intersect_obj.material.ks, 0.0, 1.0)
+		illumination = np.clip(illumination + additive_color + (intersect_obj.material.od * intersect_obj.material.kd), 0.0, 1.0)
 
 	return illumination, intersect_point
 
@@ -122,7 +127,7 @@ def write_to_ppm():
 	ppm_file.close()
 
 
-scene, objects, camera = Scene().parse("scenes/655Lab1.rayTracing")
+scene, objects, camera = Scene().parse("scenes/455Custom++.rayTracing")
 for i in range(image_height):
 	for j in range(image_width):
 		step = 1 / subdivisions

@@ -1,17 +1,20 @@
-CAMERA 0 0 0  0 0 1  0 1 0 110
+CAMERA 0 0 0  0 0 1  0 1 0  90
 BACKGROUND .2 .2 .2
 AMBIENT 0 0 0
 DIRECTIONAL_LIGHT 0 1 .2  1 1 1
-POINT_LIGHT .3 .4 .7  1 1 1
-MATERIAL Kd 0.05  Ks 0.1  Ka 0.1  Od .9 .2 .1  Os 1.0 1.0 1.0  Kgls 10  Ri 1.52
-SPHERE CUSTOM 0   0 .2 0   .2
-MATERIAL Kd 0.9  Ks 0.3  Ka 0.1  Od 0 0 .7  Os 1.0 1.0 1.0  Kgls 4  Ri None
-TRIANGLE CUSTOM 1   0 -.5 .5   1 .3 0   0 -.7 -.5
-MATERIAL Kd 0.9  Ks 0.3  Ka 0.1  Od .7 .7 0  Os 1.0 1.0 1.0  Kgls 4  Ri None
-TRIANGLE CUSTOM 2   0 -.5 .5   0 -.7 -.5   -1 .3 0
-MATERIAL Kd 0.9  Ks 0.3  Ka 0.1  Od .7 0 0  Os 1.0 1.0 1.0  Kgls 4  Ri None
-TRIANGLE CUSTOM 3   0 .5 -.5  -1 -.3 0   0 1 -.001
-MATERIAL Kd 0.9  Ks 0.3  Ka 0.1  Od 0 .7 0  Os 1.0 1.0 1.0  Kgls 4  Ri None
-TRIANGLE CUSTOM 4   0 .5 -.5   0 1 -.001   1 -.3 0
-MATERIAL Kd 0.9  Ks 0.3  Ka 0.1  Od .1 .7 .8  Os 1.0 1.0 1.0  Kgls 4  Ri None
-TRIANGLE CUSTOM 5   -.7 .5 -.5   0 -1 .2   .7 .5 -.5
+POINT_LIGHT -.3 .2 .7  1 1 1
+POINT_LIGHT .4 1 .5  1 1 1
+MATERIAL Kd 0.8  Ks 0.2  Ka 0.3  Od .8 .2 .8  Os 1.0 1.0 1.0  Kgls 8  Ri None
+SPHERE CUSTOM 0   .5 .3 -.3   .2
+MATERIAL Kd 0.2  Ks 0.5  Ka 0.2  Od .2 .9 .3  Os .8 .9 .8  Kgls 12  Ri None
+SPHERE CUSTOM 1   -.3 .1 .2   .15
+MATERIAL Kd 0.1  Ks 0.6  Ka 0.4  Od .2 .3 .75  Os 1.0 1.0 1.0  Kgls 2  Ri None
+SPHERE CUSTOM 2   .1 -.2 0   .1
+MATERIAL Kd 0.1  Ks 0.3  Ka 0.4  Od .7 .5 .3  Os 1.0 1.0 1.0  Kgls 16  Ri 1.52
+SPHERE CUSTOM 3   -.1 .05 .5   .05
+MATERIAL Kd 0.6  Ks 0.0  Ka 0.1  Od .1 .75 .85  Os 1.0 1.0 1.0  Kgls 2  Ri None
+TRIANGLE CUSTOM 4   -4 .3 -2   0 -2 4   4 .4 -2
+MATERIAL Kd 0.6  Ks 0.2  Ka 0.1  Od .9 .35 .25  Os 1.0 1.0 1.0  Kgls 3  Ri None
+TRIANGLE CUSTOM 5   -.5 -.3 .3   -.15 -.2 -.4   -.6 .1 -.2
+MATERIAL Kd 0.3  Ks 0.7  Ka 0.1  Od .1 .9 .3  Os 1.0 1.0 1.0  Kgls 10  Ri None
+TRIANGLE CUSTOM 6   .2 -.4 .2   .6 .1 -.5   .1 .2 -.7

@@ -2,16 +2,16 @@ from object_models import *
 from environment import *
 import custom_math as cm
 
-image_height = 200
-image_width = 200
+image_height = 1000
+image_width = 1000
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
-num_reflections = 1  # max ray tree depth
+num_reflections = 3  # max ray tree depth
 min_light_val = 0.05  # ????
-subdivisions = 1  # number of subdivisions in each dimension
+pixel_subdivisions = 4  # number of pixel subdivisions in each dimension
 
-scene_name = "455Custom++.ppm"
+scene_name = "655Lab1.ppm"
 render = [[0 for j in range(image_width)] for i in range(image_height)]
 
 
@@ -127,16 +127,16 @@ def write_to_ppm():
 	ppm_file.close()
 
 
-scene, objects, camera = Scene().parse("scenes/455Custom++.rayTracing")
+scene, objects, camera = Scene().parse("scenes/655Lab1.rayTracing")
 for i in range(image_height):
 	for j in range(image_width):
-		step = 1 / subdivisions
-		subrays = [(i + step * n, j + step * p) for n in range(subdivisions) for p in range(subdivisions)]
+		step = 1 / pixel_subdivisions
+		subrays = [(i + step * n, j + step * p) for n in range(pixel_subdivisions) for p in range(pixel_subdivisions)]
 		pixel_color = 0
 		for x, y in subrays:
 			ray = compute_primary_ray(x, y)[:3]
 			color, intersection = compute_intersections(camera.look_from, ray, num_reflections)
 			pixel_color += color if color is not None else scene.background_color
-		render[i][j] = pixel_color / (subdivisions ** 2)  # average pixel color by number of subrays
+		render[i][j] = pixel_color / (pixel_subdivisions ** 2)  # average pixel color by number of subrays
 
 write_to_ppm()

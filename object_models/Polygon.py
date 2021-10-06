@@ -1,7 +1,7 @@
 from object_models import Object
 
 
-# General Polygon intersection class
+# General Polygon intersection class TODO: FIX THIS CLASS
 class Polygon(Object):
 	def __init__(self, kd, ks, ka, od, os, kgls):
 		super().__init__(kd, ks, ka, od, os, kgls)

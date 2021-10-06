@@ -3,3 +3,6 @@ class Ray:
 		self.origin = origin
 		self.direction = direction
 		self.current_material = material
+
+	def jitter(self):
+		pass

@@ -1,6 +1,7 @@
-from object_models import *
-from environment import *
-import custom_math as cm
+import numpy as np
+from utility import custom_math as cm
+from utility import Parser
+from materials import AreaLight
 from multiprocessing import Pool
 
 image_height = 300
@@ -47,19 +48,24 @@ def compute_primary_ray(i, j):  # i, j are viewport points
 
 
 def is_in_shadow(point, light):
-	shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
+	if "object" in light:
+		shadow_direction = light["object"].get_position() - point
+	else:
+		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
 	shadow_direction = shadow_direction / np.linalg.norm(shadow_direction)
 	shadow_obj, shadow_intersect = compute_intersections(point + epsilon * shadow_direction, shadow_direction)
-	return True if shadow_intersect is not None else False
+	if shadow_intersect is None:
+		return False
+	return False if isinstance(shadow_obj.material, AreaLight) else True
 
 
-def compute_intersections(r0, rd):
-	global objects
+def compute_intersections(r0, rd):  # TODO: Do BVH tree traversal
+	global scene
 
 	min_dist = float('inf')
 	final_point = None
 	final_obj = None
-	for obj in objects:
+	for obj in scene.objects:
 		point = obj.intersect(r0, rd)
 		if point is not None:
 			distance = cm.distance_3D(r0, point)
@@ -74,14 +80,20 @@ def compute_intersections(r0, rd):
 
 def compute_lighting(rd, obj, point, norm):
 	global scene
+	if obj in scene.light_sources:  # The obj is an area light
+		return obj.material.color
 
 	illumination = np.array([0.0, 0.0, 0.0])
 	for light_source in scene.light_sources:
-		# TODO: update for area lights in the future
-		light_direction = light_source["direction"] if "direction" in light_source else light_source["pos"]
+		if "object" in light_source:
+			light_direction = light_source["object"].get_position()
+			light_color = light_source["object"].material.color
+		else:
+			light_direction = light_source["direction"] if "direction" in light_source else light_source["pos"]
+			light_color = light_source["color"]
 		light_vector = light_direction - 2 * norm * (np.dot(light_direction, norm))
 		light_reflection = light_vector / np.linalg.norm(light_vector)
-		obj_luminance = obj.luminance(scene.ambient_light, light_source["color"], light_direction, norm,
+		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, norm,
 												rd, light_reflection, is_in_shadow(point, light_source))
 		illumination += illumination + obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
@@ -124,6 +136,8 @@ def trace_ray(r0, rd, spawn_depth):
 	intersect_obj, intersect_point = compute_intersections(r0, rd)
 	if intersect_obj is None:
 		return None, None
+	if isinstance(intersect_obj.material, AreaLight):
+		return intersect_obj.material.color, intersect_point
 
 	object_norm = intersect_obj.compute_normal(intersect_point)
 	illumination = compute_lighting(rd, intersect_obj, intersect_point, object_norm)
@@ -155,7 +169,6 @@ def write_to_ppm():
 
 
 def compute_pixel(pixel):
-	# Takes in a list of tuples of pixel coordinates to iterate over
 	i, j = pixel
 	step = 1 / pixel_subdivisions
 	subrays = [(i + step * n, j + step * p) for n in range(pixel_subdivisions) for p in range(pixel_subdivisions)]
@@ -178,10 +191,11 @@ def setup(global_vars, pixel):
 
 if __name__ == '__main__':
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
-	scene, objects, camera = Scene().parse("scenes/655Lab1.rayTracing")
+	scene = Parser().parse_scene("scenes/655Lab2.rayTracing")
+	# scene.generate_hierarchy
 	total_pixels = image_height * image_width
 	pixel_chunk_size = (total_pixels - (total_pixels % num_processes)) // num_processes
-	shared_vars = {'scene': scene, 'objects': objects, 'camera': camera}
+	shared_vars = {'scene': scene, 'objects': scene.objects, 'camera': scene.camera}
 
 	all_pixels = [(shared_vars, (h, w)) for h in range(image_height) for w in range(image_width)]
 	with Pool(num_processes) as pool:

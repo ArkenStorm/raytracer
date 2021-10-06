@@ -1,6 +1,6 @@
 from object_models.Object import Object
 import numpy as np
-import custom_math as cm
+from utility import custom_math as cm
 
 
 class Triangle(Object):
@@ -40,3 +40,6 @@ class Triangle(Object):
 		v1 = self.vertices[1] - self.vertices[0]
 		v2 = self.vertices[2] - self.vertices[0]
 		return cm.cross_norm(v1, v2)
+
+	def get_position(self):
+		return sum(self.vertices) / 3

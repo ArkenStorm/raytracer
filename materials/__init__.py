@@ -1,5 +1,6 @@
 from .Material import *
 from .Alcohol import *
+from .AreaLight import *
 from .CrownGlass import *
 from .Diamond import *
 from .FlintGlass import *
@@ -7,3 +8,4 @@ from .FusedQuartz import *
 from .HeavyFlintGlass import *
 from .Sapphire import *
 from .Water import *
+from .validmaterials import *

@@ -34,3 +34,6 @@ class Sphere(Object):
 
 	def compute_normal(self, object_point, *args, **kwargs):
 		return (object_point - self.center) / self.radius
+
+	def get_position(self):
+		return self.center

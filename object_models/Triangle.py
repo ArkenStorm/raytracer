@@ -1,4 +1,5 @@
-from object_models.Object import Object
+from object_models import Object
+from object_models import Box
 import numpy as np
 from utility import custom_math as cm
 
@@ -43,3 +44,12 @@ class Triangle(Object):
 
 	def get_position(self):
 		return sum(self.vertices) / 3
+
+	def get_bounding_box(self):
+		min_vals = [min(self.vertices, key=lambda vertex:vertex[0]),
+					min(self.vertices, key=lambda vertex:vertex[1]),
+					min(self.vertices, key=lambda vertex:vertex[2])]
+		max_vals = [max(self.vertices, key=lambda vertex:vertex[0]),
+					max(self.vertices, key=lambda vertex:vertex[1]),
+					max(self.vertices, key=lambda vertex:vertex[2])]
+		return Box(min_vals, max_vals, None)

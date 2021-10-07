@@ -15,6 +15,9 @@ class Object:
 	def get_position(self):
 		return 0
 
+	def get_bounding_box(self):
+		return None
+
 	# pl == point light
 	def luminance(self, ambient_color, pl_color, pl_direction, obj_norm, view_direction, light_reflect, in_shadow):
 		if in_shadow:

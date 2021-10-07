@@ -4,5 +4,7 @@ class Ray:
 		self.direction = direction
 		self.current_material = material
 
-	def jitter(self):
+	def jitter(self, factor):
+		# randomly choose between 1 and 3 axes
+		# choose number between 1 and -1, include factor somehow
 		pass

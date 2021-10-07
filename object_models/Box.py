@@ -33,7 +33,7 @@ class Box(Object):
 		else:  # TODO: If non axis-aligned boxes get implemented
 			pass
 
-	def compute_normal(self, object_point, *args, **kwargs):
+	def compute_normal(self, object_point, *args, **kwargs):  # Only works for axis-aligned right now
 		normal = [(self.min_vals[0] - self.max_vals[0]), 0, 0]
 		minimum = abs(object_point[0] - self.min_vals[0])
 		temp = abs(object_point[0] - self.max_vals[0])
@@ -62,3 +62,6 @@ class Box(Object):
 	def get_position(self):
 		# TODO: not quite sure how to check a box area light yet
 		pass
+
+	def get_bounding_box(self):
+		return self

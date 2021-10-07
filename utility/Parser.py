@@ -69,7 +69,7 @@ class Parser:
 			max_vals[1], min_vals[1] = min_vals[1], max_vals[1]
 		if max_vals[2] < min_vals[2]:
 			max_vals[2], min_vals[2] = min_vals[2], max_vals[2]
-		return Box(min_vals, max_vals, mat)
+		return Box(min_vals, max_vals, mat)  # Do the min/max vals need to be np arrays?
 
 	def parse_scene(self, filepath):
 		lights, objs, custom_mats = [], [], []

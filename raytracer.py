@@ -84,6 +84,7 @@ def compute_lighting(rd, obj, point, norm):
 		return obj.material.color
 
 	illumination = np.array([0.0, 0.0, 0.0])
+	# TODO: Add intensity on lighting
 	for light_source in scene.light_sources:
 		if "object" in light_source:
 			light_direction = light_source["object"].get_position()
@@ -192,7 +193,7 @@ def setup(global_vars, pixel):
 if __name__ == '__main__':
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
 	scene = Parser().parse_scene("scenes/655Lab2.rayTracing")
-	# scene.generate_hierarchy
+	scene.generate_hierarchy()
 	total_pixels = image_height * image_width
 	pixel_chunk_size = (total_pixels - (total_pixels % num_processes)) // num_processes
 	shared_vars = {'scene': scene, 'objects': scene.objects, 'camera': scene.camera}

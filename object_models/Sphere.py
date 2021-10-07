@@ -1,4 +1,5 @@
-from object_models.Object import Object
+from object_models import Object
+from object_models import Box
 
 
 class Sphere(Object):
@@ -37,3 +38,9 @@ class Sphere(Object):
 
 	def get_position(self):
 		return self.center
+
+	def get_bounding_box(self):
+		x_min, x_max = self.center[0] - self.radius, self.center[0] + self.radius
+		y_min, y_max = self.center[1] - self.radius, self.center[1] + self.radius
+		z_min, z_max = self.center[2] - self.radius, self.center[2] + self.radius
+		return Box([x_min, y_min, z_min], [x_max, y_max, z_max], None)

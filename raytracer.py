@@ -1,6 +1,6 @@
 import numpy as np
-from utility import custom_math as cm
 from utility import Parser
+from utility import custom_math as cm
 from materials import AreaLight
 from multiprocessing import Pool
 

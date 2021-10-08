@@ -46,10 +46,9 @@ class Triangle(Object):
 		return sum(self.vertices) / 3
 
 	def get_bounding_box(self):
-		min_vals = [min(self.vertices, key=lambda vertex:vertex[0]),
-					min(self.vertices, key=lambda vertex:vertex[1]),
-					min(self.vertices, key=lambda vertex:vertex[2])]
-		max_vals = [max(self.vertices, key=lambda vertex:vertex[0]),
-					max(self.vertices, key=lambda vertex:vertex[1]),
-					max(self.vertices, key=lambda vertex:vertex[2])]
+		x_coords = [x[0] for x in self.vertices]
+		y_coords = [y[0] for y in self.vertices]
+		z_coords = [z[0] for z in self.vertices]
+		min_vals = [min(x_coords), min(y_coords), min(z_coords)]
+		max_vals = [max(x_coords), max(y_coords), max(z_coords)]
 		return Box(min_vals, max_vals, None)

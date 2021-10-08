@@ -26,8 +26,8 @@ class Box(Object):
 					return None
 			# If ray is inside the box
 			if self.max_vals[0] > r0[0] > self.min_vals[0] and \
-					self.max_vals[1] > r0[1] > self.min_vals[1] and \
-					self.max_vals[2] > r0[2] > self.min_vals[2]:
+				self.max_vals[1] > r0[1] > self.min_vals[1] and \
+				self.max_vals[2] > r0[2] > self.min_vals[2]:
 				return r0 + rd * t_far
 			return r0 + rd * t_near if t_near != -float('inf') else None
 		else:  # TODO: If non axis-aligned boxes get implemented

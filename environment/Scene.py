@@ -11,8 +11,8 @@ class Scene:
 		self.camera = camera
 		self.custom_materials = custom_materials
 		self.hierarchy = None  # set to tree root
-		self.max_subspaces = 20  # set as constant for simplicity
-		self.max_objects = 3
+		self.subspace_tree_depth = 10  # set as constant for simplicity
+		self.subspace_object_count = 2
 		# TODO: set default scene material
 
 	def generate_hierarchy(self):
@@ -28,7 +28,21 @@ class Scene:
 		# Bounding box of the whole scene
 		omnibox = Box([scene_x_min, scene_y_min, scene_z_min], [scene_x_max, scene_y_max, scene_z_max], None)
 		root = Node(omnibox, None)
-		subspaces = 0
-
+		# depth 0 means only one overall subspace
+		self.subspace_generator(root, self.objects, self.subspace_tree_depth)
 		pass
 
+	def subspace_generator(self, parent, object_list, depth):
+		if depth <= 0 or len(object_list) <= self.subspace_object_count:
+			parent.children.extend(object_list)
+			return
+		mins, maxes = parent.subspace.min_vals, parent.subspace.max_vals
+		diffs = [abs(a-b) for a, b in zip(maxes, mins)]
+		axis = diffs.index(max(diffs))
+		midpoint = mins[axis] + diffs[axis] / 2
+		new_mins = mins[:axis] + [midpoint] + mins[axis + 1:]
+		new_maxes = maxes[:axis] + [midpoint] + mins[axis + 1:]
+		# first new box keeps min, gets new max, vice versa for second box
+		parent.first = Node(Box(mins, new_maxes, None), parent)
+		parent.second = Node(Box(new_mins, maxes, None), parent)
+		pass

@@ -7,4 +7,5 @@ class Ray:
 	def jitter(self, factor):
 		# randomly choose between 1 and 3 axes
 		# choose number between 1 and -1, include factor somehow
+		# make sure to normalize
 		pass

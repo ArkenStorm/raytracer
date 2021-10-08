@@ -4,7 +4,7 @@ AMBIENT 0 0 0
 DIRECTIONAL_LIGHT 0 1 .2  1 1 1
 POINT_LIGHT -.3 .2 .7  1 1 1
 POINT_LIGHT .4 1 .5  1 1 1
-SPHERE AREA_LIGHT   1 1 0.6   0 .5 -.5   .05
+SPHERE AREA_LIGHT   1 1 0.6   0 .5 -1   .05
 MATERIAL Kd 0.8  Ks 0.2  Ka 0.3  Od .8 .2 .8  Os 1.0 1.0 1.0  Kgls 8  Ri None
 SPHERE CUSTOM 0   .5 .3 -.3   .2
 MATERIAL Kd 0.2  Ks 0.5  Ka 0.2  Od .2 .9 .3  Os .8 .9 .8  Kgls 12  Ri None

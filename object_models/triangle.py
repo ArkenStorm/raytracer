@@ -47,8 +47,8 @@ class Triangle(Object):
 
 	def get_bounding_box(self):
 		x_coords = [x[0] for x in self.vertices]
-		y_coords = [y[0] for y in self.vertices]
-		z_coords = [z[0] for z in self.vertices]
+		y_coords = [y[1] for y in self.vertices]
+		z_coords = [z[2] for z in self.vertices]
 		min_vals = [min(x_coords), min(y_coords), min(z_coords)]
 		max_vals = [max(x_coords), max(y_coords), max(z_coords)]
 		return Box(min_vals, max_vals, None)

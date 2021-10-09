@@ -3,6 +3,7 @@ from utility import Parser
 from utility import custom_math as cm
 from materials import AreaLight
 from multiprocessing import Pool
+import time
 
 image_height = 300
 image_width = 300
@@ -53,29 +54,69 @@ def is_in_shadow(point, light):
 	else:
 		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
 	shadow_direction = shadow_direction / np.linalg.norm(shadow_direction)
-	shadow_obj, shadow_intersect = compute_intersections(point + epsilon * shadow_direction, shadow_direction)
+	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(point + epsilon * shadow_direction, shadow_direction, scene.root)
 	if shadow_intersect is None:
 		return False
 	return False if isinstance(shadow_obj.material, AreaLight) else True
 
 
-def compute_intersections(r0, rd):  # TODO: Do BVH tree traversal
-	global scene
+def compute_intersections(r0, rd, node):
+	# TODO: add parent to node, try and be smart about traversal? Keep track of current node/space ray is in?
 
-	min_dist = float('inf')
-	final_point = None
-	final_obj = None
-	for obj in scene.objects:
-		point = obj.intersect(r0, rd)
-		if point is not None:
-			distance = cm.distance_3D(r0, point)
-			if distance < min_dist:
-				min_dist = distance
-				final_point = point
-				final_obj = obj
-	if final_point is None:
-		return None, None  # no intersection
-	return final_obj, final_point
+	# global scene
+	# min_dist = float('inf')
+	# final_point = None
+	# final_obj = None
+	#
+	# for obj in scene.objects:
+	# 	point = obj.intersect(r0, rd)
+	# 	if point is not None:
+	# 		distance = cm.distance_3D(r0, point)
+	# 		if distance < min_dist:
+	# 			min_dist = distance
+	# 			final_point = point
+	# 			final_obj = obj
+	# if final_point is None:
+	# 	return None, None, None  # no intersection
+	# return final_obj, final_point, min_dist
+
+	if node.first is None:  # both first and second will be None in this case
+		min_dist = float('inf')
+		final_point = None
+		final_obj = None
+
+		for obj in node.children:
+			point = obj.intersect(r0, rd)
+			if point is not None:
+				distance = cm.distance_3D(r0, point)
+				if distance < min_dist:
+					min_dist = distance
+					final_point = point
+					final_obj = obj
+		if final_point is None:
+			return None, None, None  # no intersection
+		return final_obj, final_point, min_dist
+	else:
+		o1, p1, d1 = None, None, None
+		o2, p2, d2 = None, None, None
+		if node.first.subspace.intersect(r0, rd) is not None:
+			o1, p1, d1 = compute_intersections(r0, rd, node.first)
+		if node.second.subspace.intersect(r0, rd) is not None:
+			o2, p2, d2 = compute_intersections(r0, rd, node.second)
+
+		# the ray intersects no objects in this subspace
+		if d1 is None and d2 is None:
+			return None, None, None
+
+		if d1 is not None:
+			if d2 is None:
+				return o1, p1, d1
+			return (o1, p1, d1) if d1 < d2 else (o2, p2, d2)
+
+		if d2 is not None:
+			if d1 is None:
+				return o2, p2, d2
+			return (o2, p2, d2) if d2 < d1 else (o1, p1, d1)
 
 
 def compute_lighting(rd, obj, point, norm):
@@ -134,7 +175,7 @@ def trace_refractions(illumination, rd, obj, point, norm, spawn_depth):
 def trace_ray(r0, rd, spawn_depth):
 	global scene
 
-	intersect_obj, intersect_point = compute_intersections(r0, rd)
+	intersect_obj, intersect_point, intersect_dist = compute_intersections(r0, rd, scene.root)
 	if intersect_obj is None:
 		return None, None
 	if isinstance(intersect_obj.material, AreaLight):
@@ -191,9 +232,15 @@ def setup(global_vars, pixel):
 
 
 if __name__ == '__main__':
+	start_time = time.time()
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
-	scene = Parser().parse_scene("scenes/655Lab2.rayTracing")
+	# TODO: programmatic scene generation
+	scene = Parser().parse_scene("scenes/sphere_refract.rayTracing")
+
+	hierarchy_time = time.time()
 	scene.generate_hierarchy()
+	print("Time to generate BVH: " + str(time.time() - hierarchy_time) + " seconds.")
+
 	total_pixels = image_height * image_width
 	pixel_chunk_size = (total_pixels - (total_pixels % num_processes)) // num_processes
 	shared_vars = {'scene': scene, 'objects': scene.objects, 'camera': scene.camera}
@@ -205,3 +252,4 @@ if __name__ == '__main__':
 			render[i][j] = pixel_color
 
 	write_to_ppm()
+	print("Total time elapsed: " + str(time.time() - start_time) + " seconds.")

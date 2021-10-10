@@ -10,19 +10,19 @@ class Triangle(Object):
 		self.vertices = vertices  # list of vertices to render
 		self.normal = self.compute_normal()
 
-	def intersect(self, r0, rd):
+	def intersect(self, r):
 		normal = self.normal.copy()
-		preemptive_test = np.dot(normal, rd)
+		preemptive_test = np.dot(normal, r.dir)
 		if preemptive_test == 0:  # ray is parallel, does not intersect
 			return None
 		if preemptive_test > 0:
 			normal = -normal
-			preemptive_test = np.dot(normal, rd)
+			preemptive_test = np.dot(normal, r.dir)
 		plane_dist = -np.dot(normal, self.vertices[0])
-		triangle_point_dist = -(np.dot(normal, r0) + plane_dist) / preemptive_test
+		triangle_point_dist = -(np.dot(normal, r.origin) + plane_dist) / preemptive_test
 		if triangle_point_dist <= 0:
 			return None
-		intersect_point = r0 + rd*triangle_point_dist
+		intersect_point = r.origin + r.dir*triangle_point_dist
 		normal = -normal  # only flip it for the first part of the intersection algorithm
 
 		sign_total = 0

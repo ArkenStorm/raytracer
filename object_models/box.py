@@ -9,15 +9,15 @@ class Box(Object):
 		self.max_vals = max_vals
 		self.axis_aligned = True  # TODO: Make this customizable in the future?
 
-	def intersect(self, r0, rd):
+	def intersect(self, r):
 		if self.axis_aligned:
 			t_near = -float('inf')
 			t_far = float('inf')
-			for axis in range(len(r0)):
-				if rd[axis] == 0:
+			for axis in range(len(r.origin)):
+				if r.dir[axis] == 0:
 					continue  # Is this right?
-				t1 = (self.min_vals[axis] - r0[axis]) / rd[axis]
-				t2 = (self.max_vals[axis] - r0[axis]) / rd[axis]
+				t1 = (self.min_vals[axis] - r.origin[axis]) / r.dir[axis]
+				t2 = (self.max_vals[axis] - r.origin[axis]) / r.dir[axis]
 				if t1 > t2:
 					t1, t2 = t2, t1
 				if t1 > t_near:
@@ -27,11 +27,11 @@ class Box(Object):
 				if t_near > t_far or t_far < 0:
 					return None
 			# If ray is inside the box
-			if self.max_vals[0] > r0[0] > self.min_vals[0] and \
-				self.max_vals[1] > r0[1] > self.min_vals[1] and \
-				self.max_vals[2] > r0[2] > self.min_vals[2]:
-				return r0 + rd * t_far
-			return r0 + rd * t_near if t_near != -float('inf') else None
+			if self.max_vals[0] > r.origin[0] > self.min_vals[0] and \
+				self.max_vals[1] > r.origin[1] > self.min_vals[1] and \
+				self.max_vals[2] > r.origin[2] > self.min_vals[2]:
+				return r.origin + r.dir * t_far
+			return r.origin + r.dir * t_near if t_near != -float('inf') else None
 		else:  # TODO: If non axis-aligned boxes get implemented
 			pass
 

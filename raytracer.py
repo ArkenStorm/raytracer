@@ -1,18 +1,19 @@
 import numpy as np
+from ray import Ray
 from utility import Parser
 from utility import custom_math as cm
 from materials import AreaLight
 from multiprocessing import Pool
 import time
 
-image_height = 1000
-image_width = 1000
+image_height = 200
+image_width = 200
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
 num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 5  # number of pixel subdivisions in each dimension
 num_processes = 6
 scene, objects, camera = None, None, None
 render = None
@@ -48,19 +49,21 @@ def compute_primary_ray(i, j):  # i, j are viewport points
 	return screen_to_world @ translate @ ray_screen  # ray in world space
 
 
-def is_in_shadow(point, light):
+def is_in_shadow(point, light, jitter_factor):
 	if "object" in light:
 		shadow_direction = light["object"].get_position() - point
 	else:
 		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
 	shadow_direction = shadow_direction / np.linalg.norm(shadow_direction)
-	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(point + epsilon * shadow_direction, shadow_direction, scene.root)
+	shadow_ray = Ray(point + epsilon * shadow_direction, shadow_direction, None)
+	shadow_ray.dir = shadow_ray.jitter(jitter_factor)
+	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(shadow_ray, scene.root)
 	if shadow_intersect is None:
 		return False
 	return False if isinstance(shadow_obj.material, AreaLight) else True
 
 
-def compute_intersections(r0, rd, node):
+def compute_intersections(r, node):
 	# TODO: add parent to node, try and be smart about traversal? Keep track of current node/space ray is in?
 
 	if node.first is None:  # both first and second will be None in this case
@@ -69,9 +72,9 @@ def compute_intersections(r0, rd, node):
 		final_obj = None
 
 		for obj in node.children:
-			point = obj.intersect(r0, rd)
+			point = obj.intersect(r)
 			if point is not None:
-				distance = cm.distance_3D(r0, point)
+				distance = cm.distance_3D(r.origin, point)
 				if distance < min_dist:
 					min_dist = distance
 					final_point = point
@@ -82,10 +85,10 @@ def compute_intersections(r0, rd, node):
 	else:
 		o1, p1, d1 = None, None, None
 		o2, p2, d2 = None, None, None
-		if node.first.subspace.intersect(r0, rd) is not None:
-			o1, p1, d1 = compute_intersections(r0, rd, node.first)
-		if node.second.subspace.intersect(r0, rd) is not None:
-			o2, p2, d2 = compute_intersections(r0, rd, node.second)
+		if node.first.subspace.intersect(r) is not None:
+			o1, p1, d1 = compute_intersections(r, node.first)
+		if node.second.subspace.intersect(r) is not None:
+			o2, p2, d2 = compute_intersections(r, node.second)
 
 		# the ray intersects no objects in this subspace
 		if d1 is None and d2 is None:
@@ -118,62 +121,66 @@ def compute_lighting(rd, obj, point, norm):
 			light_color = light_source["color"]
 		light_vector = light_direction - 2 * norm * (np.dot(light_direction, norm))
 		light_reflection = light_vector / np.linalg.norm(light_vector)
+		# what should jitter factor be?
 		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, norm,
-												rd, light_reflection, is_in_shadow(point, light_source))
+												rd, light_reflection, is_in_shadow(point, light_source, obj.material.kgls))
 		illumination += illumination + obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
 	illumination = np.clip(illumination / len(scene.light_sources), 0.0, 1.0)
 	return illumination
 
 
-def trace_reflections(illumination, rd, obj, point, norm, spawn_depth):
-	reflect_direction = rd - 2 * norm * (np.dot(rd, norm))
+def trace_reflections(illumination, r, obj, point, norm, spawn_depth):
+	reflect_direction = r.dir - 2 * norm * (np.dot(r.dir, norm))
 	reflect_point = point + epsilon * reflect_direction
-	recursive_color, recursive_intersect = trace_ray(reflect_point, reflect_direction, spawn_depth - 1)
+	reflection_ray = Ray(reflect_point, reflect_direction, None)
+	recursive_color, recursive_intersect = trace_ray(reflection_ray, spawn_depth - 1)
 	additive_color = recursive_color if recursive_color is not None else scene.background_color
 	illumination = np.clip(illumination + additive_color * obj.material.ks, 0.0, 1.0)
 	return illumination
 
 
-def trace_refractions(illumination, rd, obj, point, norm, spawn_depth):
+def trace_refractions(illumination, r, obj, point, norm, spawn_depth):
 	# TODO: keep track of what material the ray is currently in for internal refraction
 	index_refraction = 1.003 / obj.material.ri
-	cos_theta = np.dot(norm, -rd) / (np.linalg.norm(norm) * np.linalg.norm(rd))
-	refract_direction = index_refraction * rd + \
-						(index_refraction * cos_theta - (
-									1 + (index_refraction ** 2) * ((cos_theta ** 2) - 1)) ** 0.5) * norm
+	cos_theta = np.dot(norm, -r.dir) / (np.linalg.norm(norm) * np.linalg.norm(r.dir))
+	refract_direction = index_refraction * r.dir + \
+						(index_refraction * cos_theta -
+						 (1 + (index_refraction ** 2) * ((cos_theta ** 2) - 1)) ** 0.5) * norm
 	start_refract_point = point + epsilon * refract_direction
 	# this only works with spheres right now
-	end_refract_point = obj.intersect(start_refract_point, refract_direction) + epsilon * refract_direction
+	internal_ray = Ray(start_refract_point, refract_direction, None)
+	end_refract_point = obj.intersect(internal_ray) + epsilon * refract_direction
 
 	# the ray goes back to the original direction <-- is this true?
 	# TODO: Handle internal refraction
-	recursive_color, recursive_intersect = trace_ray(end_refract_point, rd, spawn_depth)
+	refraction_ray = Ray(end_refract_point, r.dir, None)
+	recursive_color, recursive_intersect = trace_ray(refraction_ray, spawn_depth)
 	additive_color = recursive_color if recursive_color is not None else scene.background_color
 	illumination = np.clip(illumination + additive_color + (obj.material.od * obj.material.kd), 0.0, 1.0)
 	return illumination
 
 
 # r0 == ray origin, rd == ray direction;
-def trace_ray(r0, rd, spawn_depth):
+def trace_ray(r, spawn_depth):
 	global scene
 
-	intersect_obj, intersect_point, intersect_dist = compute_intersections(r0, rd, scene.root)
+	intersect_obj, intersect_point, intersect_dist = compute_intersections(r, scene.root)
 	if intersect_obj is None:
 		return None, None
 	if isinstance(intersect_obj.material, AreaLight):
 		return intersect_obj.material.color, intersect_point
 
 	object_norm = intersect_obj.compute_normal(intersect_point)
-	illumination = compute_lighting(rd, intersect_obj, intersect_point, object_norm)
+	illumination = compute_lighting(r.dir, intersect_obj, intersect_point, object_norm)
 
 	# calculate and trace reflection ray
 	if intersect_obj.material.ks > 0 and spawn_depth > 0:
-		illumination = trace_reflections(illumination, rd, intersect_obj, intersect_point, object_norm, spawn_depth)
+		illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
 	# calculate and trace refraction ray; spawn depth checked because of internal refraction
 	if intersect_obj.material.ri is not None and spawn_depth > 0:
-		illumination = trace_refractions(illumination, rd, intersect_obj, intersect_point, object_norm, spawn_depth)
+		illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
 	return illumination, intersect_point
 
@@ -199,8 +206,9 @@ def compute_pixel(pixel):
 	subrays = [(i + step * n, j + step * p) for n in range(pixel_subdivisions) for p in range(pixel_subdivisions)]
 	p_color = 0  # pixel_color
 	for x, y in subrays:
-		ray = compute_primary_ray(x, y)[:3]
-		color, intersection = trace_ray(camera.look_from, ray, num_reflections)
+		ray_direction = compute_primary_ray(x, y)[:3]
+		primary_ray = Ray(camera.look_from, ray_direction, None)  # TODO: starting ray material
+		color, intersection = trace_ray(primary_ray, num_reflections)
 		p_color += color if color is not None else scene.background_color
 	p_color /= (pixel_subdivisions ** 2)  # average pixel color by number of subrays
 	return p_color, i, j

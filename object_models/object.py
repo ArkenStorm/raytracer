@@ -6,7 +6,7 @@ class Object:
 		self.material = material
 
 	# returns the intersection point
-	def intersect(self, r0, rd):
+	def intersect(self, r):
 		pass
 
 	def compute_normal(self, *args, **kwargs):

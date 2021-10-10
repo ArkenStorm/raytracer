@@ -8,9 +8,9 @@ class Sphere(Object):
 		self.center = center  # center of the sphere
 		self.radius = radius  # radius of the sphere
 
-	def intersect(self, r0, rd):
-		x0, y0, z0 = r0
-		xd, yd, zd = rd
+	def intersect(self, r):
+		x0, y0, z0 = r.origin
+		xd, yd, zd = r.dir
 		xc, yc, zc = self.center
 
 		# A = xd**2 + yd**2 + zd**2  # should always be 1 because of normalization, so I won't include it
@@ -31,7 +31,7 @@ class Sphere(Object):
 				intersect_dist = -1
 		else:  # 0 real roots
 			return None
-		return r0 + rd*intersect_dist if intersect_dist > 0 else None
+		return r.origin + r.dir*intersect_dist if intersect_dist > 0 else None
 
 	def compute_normal(self, object_point, *args, **kwargs):
 		return (object_point - self.center) / self.radius

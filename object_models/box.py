@@ -13,7 +13,9 @@ class Box(Object):
 		if self.axis_aligned:
 			t_near = -float('inf')
 			t_far = float('inf')
-			for axis in range(len(r0)):  # TODO: check for direction 0
+			for axis in range(len(r0)):
+				if rd[axis] == 0:
+					continue  # Is this right?
 				t1 = (self.min_vals[axis] - r0[axis]) / rd[axis]
 				t2 = (self.max_vals[axis] - r0[axis]) / rd[axis]
 				if t1 > t2:

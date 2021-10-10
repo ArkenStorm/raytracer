@@ -5,19 +5,19 @@ from materials import AreaLight
 from multiprocessing import Pool
 import time
 
-image_height = 300
-image_width = 300
+image_height = 1000
+image_width = 1000
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
 num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 1  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
 num_processes = 6
 scene, objects, camera = None, None, None
 render = None
 
-scene_name = "Median_split.ppm"
+scene_name = "sphere_refract.ppm"
 
 
 def compute_primary_ray(i, j):  # i, j are viewport points
@@ -62,23 +62,6 @@ def is_in_shadow(point, light):
 
 def compute_intersections(r0, rd, node):
 	# TODO: add parent to node, try and be smart about traversal? Keep track of current node/space ray is in?
-
-	# global scene
-	# min_dist = float('inf')
-	# final_point = None
-	# final_obj = None
-	#
-	# for obj in scene.objects:
-	# 	point = obj.intersect(r0, rd)
-	# 	if point is not None:
-	# 		distance = cm.distance_3D(r0, point)
-	# 		if distance < min_dist:
-	# 			min_dist = distance
-	# 			final_point = point
-	# 			final_obj = obj
-	# if final_point is None:
-	# 	return None, None, None  # no intersection
-	# return final_obj, final_point, min_dist
 
 	if node.first is None:  # both first and second will be None in this case
 		min_dist = float('inf')
@@ -252,4 +235,7 @@ if __name__ == '__main__':
 			render[i][j] = pixel_color
 
 	write_to_ppm()
-	print("Total time elapsed: " + str(time.time() - start_time) + " seconds.")
+	seconds_elapsed = int(time.time() - start_time)
+	m, s = divmod(seconds_elapsed, 60)
+	h, m = divmod(m, 60)
+	print(f"Total time elapsed: {h:d}:{m:02d}:{s:02d}")

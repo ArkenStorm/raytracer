@@ -6,19 +6,19 @@ from materials import AreaLight
 from multiprocessing import Pool
 import time
 
-image_height = 200
-image_width = 200
+image_height = 500
+image_width = 500
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
-num_reflections = 1  # max ray tree depth
+num_reflections = 2  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 5  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
 num_processes = 6
 scene, objects, camera = None, None, None
 render = None
 
-scene_name = "sphere_refract.ppm"
+scene_name = "testing.ppm"
 
 
 def compute_primary_ray(i, j):  # i, j are viewport points
@@ -134,6 +134,7 @@ def trace_reflections(illumination, r, obj, point, norm, spawn_depth):
 	reflect_direction = r.dir - 2 * norm * (np.dot(r.dir, norm))
 	reflect_point = point + epsilon * reflect_direction
 	reflection_ray = Ray(reflect_point, reflect_direction, None)
+	reflection_ray.dir = reflection_ray.jitter(obj.material.kgls)
 	recursive_color, recursive_intersect = trace_ray(reflection_ray, spawn_depth - 1)
 	additive_color = recursive_color if recursive_color is not None else scene.background_color
 	illumination = np.clip(illumination + additive_color * obj.material.ks, 0.0, 1.0)
@@ -148,13 +149,15 @@ def trace_refractions(illumination, r, obj, point, norm, spawn_depth):
 						(index_refraction * cos_theta -
 						 (1 + (index_refraction ** 2) * ((cos_theta ** 2) - 1)) ** 0.5) * norm
 	start_refract_point = point + epsilon * refract_direction
-	# this only works with spheres right now
+	# this doesn't work for non-3D objects
 	internal_ray = Ray(start_refract_point, refract_direction, None)
+	internal_ray.dir = internal_ray.jitter(obj.material.kgls)
 	end_refract_point = obj.intersect(internal_ray) + epsilon * refract_direction
 
 	# the ray goes back to the original direction <-- is this true?
 	# TODO: Handle internal refraction
 	refraction_ray = Ray(end_refract_point, r.dir, None)
+	refraction_ray.dir = refraction_ray.jitter(obj.material.kgls)
 	recursive_color, recursive_intersect = trace_ray(refraction_ray, spawn_depth)
 	additive_color = recursive_color if recursive_color is not None else scene.background_color
 	illumination = np.clip(illumination + additive_color + (obj.material.od * obj.material.kd), 0.0, 1.0)
@@ -226,7 +229,7 @@ if __name__ == '__main__':
 	start_time = time.time()
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
 	# TODO: programmatic scene generation
-	scene = Parser().parse_scene("scenes/sphere_refract.rayTracing")
+	scene = Parser().parse_scene("scenes/655Lab1.rayTracing")
 
 	hierarchy_time = time.time()
 	scene.generate_hierarchy()

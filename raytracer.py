@@ -6,12 +6,12 @@ from materials import AreaLight
 from multiprocessing import Pool
 import time
 
-image_height = 500
-image_width = 500
+image_height = 600
+image_width = 600
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
-num_reflections = 2  # max ray tree depth
+num_reflections = 3  # max ray tree depth
 min_light_val = 0.05  # ????
 pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
 num_processes = 6
@@ -229,7 +229,7 @@ if __name__ == '__main__':
 	start_time = time.time()
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
 	# TODO: programmatic scene generation
-	scene = Parser().parse_scene("scenes/655Lab1.rayTracing")
+	scene = Parser().parse_scene("scenes/jitterbox.rayTracing")
 
 	hierarchy_time = time.time()
 	scene.generate_hierarchy()

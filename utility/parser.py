@@ -38,7 +38,7 @@ class Parser:
 		ka = float(line[6])
 		od = np.array(list(map(float, line[8:11])))
 		os = np.array(list(map(float, line[12:15])))
-		kgls = int(line[16])
+		kgls = float(line[16])
 		ri = None if line[18] == "None" else float(line[18])
 		return Material(kd, ks, ka, od, os, kgls, ri)
 

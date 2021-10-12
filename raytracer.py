@@ -229,7 +229,7 @@ if __name__ == '__main__':
 	start_time = time.time()
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
 	# TODO: programmatic scene generation
-	scene = Parser().parse_scene("scenes/jitterbox.rayTracing")
+	scene = Parser().parse_scene("scenes/sphere_refract.rayTracing")
 
 	hierarchy_time = time.time()
 	scene.generate_hierarchy()

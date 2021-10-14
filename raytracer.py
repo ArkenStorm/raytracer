@@ -115,7 +115,7 @@ def compute_lighting(r, obj, point, norm):
 	for light_source in scene.light_sources:
 		if "object" in light_source:
 			area_light = light_source["object"]
-			light_direction = area_light.sample_surface(area_light.get_position() - point, norm, point,
+			light_direction = area_light.sample_surface(area_light.get_position() - point, point, norm,
 														point - area_light.get_position())
 			light_color = light_source["object"].material.color
 		else:

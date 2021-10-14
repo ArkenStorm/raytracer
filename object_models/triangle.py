@@ -1,5 +1,6 @@
 from object_models import Object
 from object_models import Box
+import random
 import numpy as np
 from utility import custom_math as cm
 
@@ -52,3 +53,11 @@ class Triangle(Object):
 		min_vals = [min(x_coords), min(y_coords), min(z_coords)]
 		max_vals = [max(x_coords), max(y_coords), max(z_coords)]
 		return Box(min_vals, max_vals, None)
+
+	def sample_surface(self, shadow_direction, obj_point, *args, **kwargs):
+		p1 = self.vertices[0] + (self.vertices[1] - self.vertices[0]) * random.random()
+		p2 = self.vertices[1] + (self.vertices[2] - self.vertices[0]) * random.random()
+		final_point = p1 + (p2 - p1) * random.random()
+		shadow_direction = final_point - obj_point
+		shadow_direction /= np.linalg.norm(shadow_direction)
+		return shadow_direction

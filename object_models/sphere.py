@@ -48,7 +48,7 @@ class Sphere(Object):
 		z_min, z_max = self.center[2] - self.radius, self.center[2] + self.radius
 		return Box([x_min, y_min, z_min], [x_max, y_max, z_max], None)
 
-	def sample_surface(self, shadow_direction, obj_norm, obj_point, light_norm):
+	def sample_surface(self, shadow_direction, obj_point, obj_norm, light_norm, *args, **kwargs):
 		if abs(obj_norm[0]) > abs(obj_norm[1]):
 			shadow_e1 = np.array([shadow_direction[2], 0, -shadow_direction[0]])
 			shadow_e1 /= (shadow_direction[0]**2 + shadow_direction[2]**2)**0.5

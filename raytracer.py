@@ -52,7 +52,7 @@ def compute_primary_ray(i, j):  # i, j are viewport points
 def is_in_shadow(point, norm, light):
 	if "object" in light:
 		light_normal = point - light["object"].get_position()
-		shadow_direction = light["object"].sample_surface(light["object"].get_position() - point, norm, point, light_normal)
+		shadow_direction = light["object"].sample_surface(light["object"].get_position() - point, point, norm, light_normal)
 	else:
 		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
 		shadow_direction /= np.linalg.norm(shadow_direction)

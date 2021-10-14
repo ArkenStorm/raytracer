@@ -28,7 +28,7 @@ class Object:
 			   self.material.ks * pl_color * self.material.os * max(0.0, np.dot(view_direction, light_reflect)) ** self.material.kgls), 0.0, 1.0)
 
 	# Area light sampling
-	def sample_surface(self, shadow_ray, obj_norm, obj_point, light_norm):
+	def sample_surface(self, *args, **kwargs):
 		pass
 
 	# TODO: UV mapping stuff

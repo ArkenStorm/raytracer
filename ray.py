@@ -10,7 +10,7 @@ class Ray:
 
 	def jitter(self, factor):
 		jitter_axes = random.sample([0,1,2], k=random.randint(0,3))
-		new_dir = self.dir.copy()
 		for i in jitter_axes:
-			new_dir[i] += (random.uniform(-.1, .1) * (1/factor))  # tweak how factor applies?
-		return new_dir / np.linalg.norm(new_dir)
+			self.dir[i] += (random.uniform(-.1, .1) * (1/factor))  # tweak how factor applies?
+		self.dir /= np.linalg.norm(self.dir)
+		return self

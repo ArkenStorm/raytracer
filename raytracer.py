@@ -6,12 +6,12 @@ from materials import AreaLight
 from multiprocessing import Pool
 import time
 
-image_height = 600
-image_width = 600
+image_height = 300
+image_width = 300
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
-num_reflections = 3  # max ray tree depth
+num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
 pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
 num_processes = 6
@@ -49,14 +49,14 @@ def compute_primary_ray(i, j):  # i, j are viewport points
 	return screen_to_world @ translate @ ray_screen  # ray in world space
 
 
-def is_in_shadow(point, light, jitter_factor):
+def is_in_shadow(point, norm, light):
 	if "object" in light:
-		shadow_direction = light["object"].get_position() - point
+		light_normal = point - light["object"].get_position()
+		shadow_direction = light["object"].sample_surface(light["object"].get_position() - point, norm, point, light_normal)
 	else:
 		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
-	shadow_direction = shadow_direction / np.linalg.norm(shadow_direction)
+		shadow_direction /= np.linalg.norm(shadow_direction)
 	shadow_ray = Ray(point + epsilon * shadow_direction, shadow_direction, None)
-	shadow_ray.dir = shadow_ray.jitter(jitter_factor)
 	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(shadow_ray, scene.root)
 	if shadow_intersect is None:
 		return False
@@ -105,7 +105,7 @@ def compute_intersections(r, node):
 			return (o2, p2, d2) if d2 < d1 else (o1, p1, d1)
 
 
-def compute_lighting(rd, obj, point, norm):
+def compute_lighting(r, obj, point, norm):
 	global scene
 	if obj in scene.light_sources:  # The obj is an area light
 		return obj.material.color
@@ -114,7 +114,9 @@ def compute_lighting(rd, obj, point, norm):
 	# TODO: Add intensity on lighting
 	for light_source in scene.light_sources:
 		if "object" in light_source:
-			light_direction = light_source["object"].get_position()
+			area_light = light_source["object"]
+			light_direction = area_light.sample_surface(area_light.get_position() - point, norm, point,
+														point - area_light.get_position())
 			light_color = light_source["object"].material.color
 		else:
 			light_direction = light_source["direction"] if "direction" in light_source else light_source["pos"]
@@ -123,7 +125,7 @@ def compute_lighting(rd, obj, point, norm):
 		light_reflection = light_vector / np.linalg.norm(light_vector)
 		# what should jitter factor be?
 		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, norm,
-												rd, light_reflection, is_in_shadow(point, light_source, obj.material.kgls))
+												r.dir, light_reflection, is_in_shadow(point, norm, light_source))
 		illumination += illumination + obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
 	illumination = np.clip(illumination / len(scene.light_sources), 0.0, 1.0)
@@ -134,8 +136,7 @@ def trace_reflections(illumination, r, obj, point, norm, spawn_depth):
 	reflect_direction = r.dir - 2 * norm * (np.dot(r.dir, norm))
 	reflect_point = point + epsilon * reflect_direction
 	reflection_ray = Ray(reflect_point, reflect_direction, None)
-	reflection_ray.dir = reflection_ray.jitter(obj.material.kgls)
-	recursive_color, recursive_intersect = trace_ray(reflection_ray, spawn_depth - 1)
+	recursive_color, recursive_intersect = trace_ray(reflection_ray.jitter(obj.material.kgls), spawn_depth - 1)
 	additive_color = recursive_color if recursive_color is not None else scene.background_color
 	illumination = np.clip(illumination + additive_color * obj.material.ks, 0.0, 1.0)
 	return illumination
@@ -151,14 +152,12 @@ def trace_refractions(illumination, r, obj, point, norm, spawn_depth):
 	start_refract_point = point + epsilon * refract_direction
 	# this doesn't work for non-3D objects
 	internal_ray = Ray(start_refract_point, refract_direction, None)
-	internal_ray.dir = internal_ray.jitter(obj.material.kgls)
-	end_refract_point = obj.intersect(internal_ray) + epsilon * refract_direction
+	end_refract_point = obj.intersect(internal_ray.jitter(obj.material.kgls)) + epsilon * refract_direction
 
 	# the ray goes back to the original direction <-- is this true?
 	# TODO: Handle internal refraction
 	refraction_ray = Ray(end_refract_point, r.dir, None)
-	refraction_ray.dir = refraction_ray.jitter(obj.material.kgls)
-	recursive_color, recursive_intersect = trace_ray(refraction_ray, spawn_depth)
+	recursive_color, recursive_intersect = trace_ray(refraction_ray.jitter(obj.material.kgls), spawn_depth)
 	additive_color = recursive_color if recursive_color is not None else scene.background_color
 	illumination = np.clip(illumination + additive_color + (obj.material.od * obj.material.kd), 0.0, 1.0)
 	return illumination
@@ -175,7 +174,7 @@ def trace_ray(r, spawn_depth):
 		return intersect_obj.material.color, intersect_point
 
 	object_norm = intersect_obj.compute_normal(intersect_point)
-	illumination = compute_lighting(r.dir, intersect_obj, intersect_point, object_norm)
+	illumination = compute_lighting(r, intersect_obj, intersect_point, object_norm)
 
 	# calculate and trace reflection ray
 	if intersect_obj.material.ks > 0 and spawn_depth > 0:
@@ -229,7 +228,7 @@ if __name__ == '__main__':
 	start_time = time.time()
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
 	# TODO: programmatic scene generation
-	scene = Parser().parse_scene("scenes/sphere_refract.rayTracing")
+	scene = Parser().parse_scene("scenes/testing.rayTracing")
 
 	hierarchy_time = time.time()
 	scene.generate_hierarchy()

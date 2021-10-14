@@ -1,5 +1,8 @@
 from object_models import Object
 from object_models import Box
+import random
+import numpy as np
+from utility import custom_math as cm
 
 
 class Sphere(Object):
@@ -44,3 +47,25 @@ class Sphere(Object):
 		y_min, y_max = self.center[1] - self.radius, self.center[1] + self.radius
 		z_min, z_max = self.center[2] - self.radius, self.center[2] + self.radius
 		return Box([x_min, y_min, z_min], [x_max, y_max, z_max], None)
+
+	def sample_surface(self, shadow_direction, obj_norm, obj_point, light_norm):
+		if abs(obj_norm[0]) > abs(obj_norm[1]):
+			shadow_e1 = np.array([shadow_direction[2], 0, -shadow_direction[0]])
+			shadow_e1 /= (shadow_direction[0]**2 + shadow_direction[2]**2)**0.5
+		else:
+			shadow_e1 = np.array([0, -shadow_direction[2], shadow_direction[0]])
+			shadow_e1 /= (shadow_direction[1]**2 + shadow_direction[2]**2)**0.5
+		shadow_e1 /= np.linalg.norm(shadow_e1)
+		shadow_e2 = cm.cross_norm(shadow_direction, shadow_e1)
+
+		angle_to_obj = (1 - self.radius**2 / np.dot(light_norm, light_norm))
+		rand_angle = np.pi * 2 * random.random()
+		rand_val = random.random()
+		angle_cos = 1 - rand_val + rand_val * angle_to_obj
+		angle_sin = (1 - angle_cos**2)**0.5
+		shadow_direction = shadow_e1 * np.cos(rand_angle) * angle_sin + \
+						 shadow_e2 * np.sin(rand_angle) * angle_sin + \
+						 shadow_direction * angle_cos
+		shadow_direction /= np.linalg.norm(shadow_direction)
+		# return angle_to_obj in the future for path tracing?
+		return shadow_direction

@@ -6,8 +6,8 @@ from utility import custom_math as cm
 
 
 class Sphere(Object):
-	def __init__(self, center, radius, material):
-		super().__init__(material)
+	def __init__(self, center, radius, material, texture=None):
+		super().__init__(material, texture)
 		self.center = center  # center of the sphere
 		self.radius = radius  # radius of the sphere
 
@@ -69,3 +69,17 @@ class Sphere(Object):
 		shadow_direction /= np.linalg.norm(shadow_direction)
 		# return angle_to_obj in the future for path tracing?
 		return shadow_direction
+
+	def get_uv(self, point):
+		local_vector = point - self.center
+		if local_vector[0] == 0 and local_vector[2] == 0:
+			u = 0
+		else:
+			z_inverse = -1 * local_vector[2]
+			if local_vector[0] >= 0:
+				u = (2 * np.pi + np.arctan(z_inverse / local_vector[0])) / (2 * np.pi)
+				u = np.fmod(u, 1.0)
+			else:
+				u = (np.pi + np.arctan(z_inverse / local_vector[0])) / (2 * np.pi)
+		v = (np.arcsin(local_vector[1] / self.radius) + np.pi / 2) / np.pi
+		return u, v

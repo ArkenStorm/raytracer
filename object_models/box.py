@@ -3,8 +3,8 @@ import numpy as np
 
 
 class Box(Object):
-	def __init__(self, min_vals, max_vals, material):
-		super().__init__(material)
+	def __init__(self, min_vals, max_vals, material, texture=None):
+		super().__init__(material, texture)
 		self.min_vals = min_vals
 		self.max_vals = max_vals
 		self.axis_aligned = True  # TODO: Make this customizable in the future?

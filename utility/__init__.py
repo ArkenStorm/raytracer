@@ -1,3 +1,4 @@
 from .node import *
-from .parser import *
+from .texture_mapper import TextureMapper
+from .parser import Parser
 from .custom_math import *

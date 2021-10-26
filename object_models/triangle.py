@@ -6,8 +6,8 @@ from utility import custom_math as cm
 
 
 class Triangle(Object):
-	def __init__(self, vertices, material):
-		super().__init__(material)
+	def __init__(self, vertices, material, texture=None):
+		super().__init__(material, texture)
 		self.vertices = vertices  # list of vertices to render
 		self.normal = self.compute_normal()
 
@@ -60,4 +60,13 @@ class Triangle(Object):
 		final_point = p1 + (p2 - p1) * random.random()
 		shadow_direction = final_point - obj_point
 		shadow_direction /= np.linalg.norm(shadow_direction)
-		return shadow_direction
+		return
+
+	def get_uv(self, point):
+		# I have no idea what I'm doing
+		a, b, c = self.vertices
+		total_area = cm.cross_norm(b - a, c - a)
+		area_a = cm.cross_norm(c - b, point - b) / total_area
+		area_b = cm.cross_norm(a - c, point - c) / total_area
+		area_c = None
+		return None

@@ -1,5 +1,6 @@
 import numpy as np
 from ray import Ray
+from utility import TextureMapper
 from utility import Parser
 from utility import custom_math as cm
 from materials import AreaLight
@@ -13,7 +14,7 @@ i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
 num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 1  # number of pixel subdivisions in each dimension
 num_processes = 6
 scene, objects, camera = None, None, None
 render = None
@@ -56,7 +57,7 @@ def is_in_shadow(point, norm, light):
 	else:
 		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
 		shadow_direction /= np.linalg.norm(shadow_direction)
-	shadow_ray = Ray(point + epsilon * shadow_direction, shadow_direction, None)
+	shadow_ray = Ray(point + epsilon * norm, shadow_direction, None)
 	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(shadow_ray, scene.root)
 	if shadow_intersect is None:
 		return False
@@ -108,6 +109,7 @@ def compute_intersections(r, node):
 def compute_lighting(r, obj, point, norm):
 	global scene
 	if obj in scene.light_sources:  # The obj is an area light
+		# TODO: Textured lights?
 		return obj.material.color
 
 	illumination = np.array([0.0, 0.0, 0.0])
@@ -124,7 +126,7 @@ def compute_lighting(r, obj, point, norm):
 		light_vector = light_direction - 2 * norm * (np.dot(light_direction, norm))
 		light_reflection = light_vector / np.linalg.norm(light_vector)
 		# what should jitter factor be?
-		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, norm,
+		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, point, norm,
 												r.dir, light_reflection, is_in_shadow(point, norm, light_source))
 		illumination += illumination + obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
@@ -196,7 +198,7 @@ def write_to_ppm():
 		for i in range(image_width):
 			r, g, b = render[i][j]  # RGB tuples stored in the render array
 			write_line += f'{r * 255} {g * 255} {b * 255} '
-		ppm_file.write(write_line)
+		ppm_file.write(write_line + "\n")
 	print("All rows written")
 
 	ppm_file.close()
@@ -225,6 +227,7 @@ def setup(global_vars, pixel):
 
 
 if __name__ == '__main__':
+	TextureMapper.create_texture("textures/Elite.ppm")
 	start_time = time.time()
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
 	# TODO: programmatic scene generation

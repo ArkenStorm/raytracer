@@ -1,3 +1,4 @@
+from utility import TextureMapper
 from environment import *
 from object_models import *
 from materials import *
@@ -19,17 +20,26 @@ class Parser:
 			print("\n\t".join([c for c in valid_materials.values()]))
 
 	def determine_material(self, line):
+		mat, tex = Material(), None
 		if line[1].lower() == "custom":
 			start_index = 3
-			material = self.custom_materials[int(line[2])]
+			mat = self.custom_materials[int(line[2])]
+		elif line[1].lower() == "texture":
+			if line[2].lower() == "custom":
+				start_index = 4
+				tex = TextureMapper.create_texture(line[3])
+			else:
+				start_index = 3
+				tex = None  # TODO: create some prebuilt textures?
+
 		elif line[1].lower() == "area_light":
 			start_index = 5  # start after the light color
 			area_light_color = np.array(list(map(float, line[2:5])))
-			material = Parser.get_material("AreaLight")(area_light_color)
+			mat = Parser.get_material("AreaLight")(area_light_color)
 		else:
 			start_index = 2
-			material = Parser.get_material(valid_materials[line[1].lower()])()
-		return material, start_index
+			mat = Parser.get_material(valid_materials[line[1].lower()])()
+		return mat, tex, start_index
 
 	@staticmethod
 	def parse_material(line):
@@ -43,23 +53,23 @@ class Parser:
 		return Material(kd, ks, ka, od, os, kgls, ri)
 
 	def parse_sphere(self, line):
-		mat, coord_start = self.determine_material(line)
+		mat, tex, coord_start = self.determine_material(line)
 		center = list(map(float, line[coord_start:coord_start + 3]))
 		radius = float(line[coord_start + 3])
-		return Sphere(center, radius, mat)
+		return Sphere(center, radius, mat, tex)
 
 	def parse_triangle(self, line):
-		mat, coord_start = self.determine_material(line)
+		mat, tex, coord_start = self.determine_material(line)
 		vertices = [np.array(list(map(float, line[coord_start:coord_start + 3]))),
 					np.array(list(map(float, line[coord_start + 3:coord_start + 6]))),
 					np.array(list(map(float, line[coord_start + 6:])))]
-		return Triangle(vertices, mat)
+		return Triangle(vertices, mat, tex)
 
 	def parse_plane(self, line):
 		pass
 
 	def parse_box(self, line):
-		mat, coord_start = self.determine_material(line)
+		mat, tex, coord_start = self.determine_material(line)
 		max_vals = list(map(float, line[coord_start: coord_start + 3]))
 		min_vals = list(map(float, line[coord_start + 3: coord_start + 6]))
 		# Bounds checking
@@ -69,7 +79,7 @@ class Parser:
 			max_vals[1], min_vals[1] = min_vals[1], max_vals[1]
 		if max_vals[2] < min_vals[2]:
 			max_vals[2], min_vals[2] = min_vals[2], max_vals[2]
-		return Box(min_vals, max_vals, mat)  # Do the min/max vals need to be np arrays?
+		return Box(min_vals, max_vals, mat, tex)  # Do the min/max vals need to be np arrays?
 
 	def parse_scene(self, filepath):
 		lights, objs, custom_mats = [], [], []

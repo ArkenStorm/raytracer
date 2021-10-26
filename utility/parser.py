@@ -28,6 +28,7 @@ class Parser:
 			if line[2].lower() == "custom":
 				start_index = 4
 				tex = TextureMapper.create_texture(line[3])
+			# TODO: Material texture, i.e. metal where it has an image AND transmissive/reflective properties?
 			else:
 				start_index = 3
 				tex = None  # TODO: create some prebuilt textures?

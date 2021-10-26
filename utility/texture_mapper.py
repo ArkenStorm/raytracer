@@ -13,7 +13,7 @@ class TextureMapper:
 		image = open(path)
 		image.readline()  # skip the P3/P6
 		width, height = map(int, image.readline().split(" "))
-		image.readline()  # skip max color val
+		max_color = int(image.readline())
 		tex = []
 		# stupid gimp not exporting things according to ppm standard
 		# while row := image.readline().split(' '):
@@ -27,4 +27,4 @@ class TextureMapper:
 			row_pixels = [(rgb_vals[j], rgb_vals[j+1], rgb_vals[j+2]) for j in range(i, i + width * 3, 3)]
 			tex.append(row_pixels)
 
-		return Texture(tex)
+		return Texture(tex, max_color)

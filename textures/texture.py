@@ -2,8 +2,9 @@ import numpy as np
 
 
 class Texture:
-	def __init__(self, ppm):
+	def __init__(self, ppm, max_color=255):
 		self.ppm = ppm
+		self.max_color = max_color
 
 	def get_color(self, u, v):
 		u = min(u, 0.999)
@@ -16,4 +17,4 @@ class Texture:
 			v = 1 + v
 		row = int(v * len(self.ppm))
 		col = int(u * len(self.ppm[0]))
-		return self.ppm[row][col]
+		return tuple(x / self.max_color for x in self.ppm[row][col])

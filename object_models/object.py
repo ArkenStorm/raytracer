@@ -24,18 +24,19 @@ class Object:
 		if self.texture is not None:
 			u, v = self.get_uv(point)
 			uv_color = self.texture.get_color(u, v)
-			ambient = ambient_color * uv_color * self.material.ka
+			ambient = ambient_color * uv_color
 			diffuse = pl_color * uv_color
-			specular = pl_color * uv_color * self.material.ka  # does this need to change?
+			illumination = diffuse
 		else:
 			ambient = self.material.ka * ambient_color * self.material.od
 			diffuse = self.material.kd * pl_color * self.material.od * max(0.0, np.dot(norm, pl_direction))
 			specular = self.material.ks * pl_color * self.material.os * max(0.0, np.dot(view_direction, light_reflect)) ** self.material.kgls
+			illumination = ambient + diffuse + specular
 
 		if in_shadow:
 			return np.clip(ambient, 0.0, 1.0)
 
-		return np.clip((ambient + diffuse + specular), 0.0, 1.0)
+		return np.clip(illumination, 0.0, 1.0)
 
 	# Area light sampling
 	def sample_surface(self, *args, **kwargs):

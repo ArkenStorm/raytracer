@@ -128,7 +128,7 @@ def compute_lighting(r, obj, point, norm):
 		# what should jitter factor be?
 		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, point, norm,
 												r.dir, light_reflection, is_in_shadow(point, norm, light_source))
-		illumination += illumination + obj_luminance  # obj_luminance should never be None
+		illumination += obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
 	illumination = np.clip(illumination / len(scene.light_sources), 0.0, 1.0)
 	return illumination

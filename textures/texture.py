@@ -17,4 +17,4 @@ class Texture:
 			v = 1 + v
 		row = int(v * len(self.ppm))
 		col = int(u * len(self.ppm[0]))
-		return tuple(x / self.max_color for x in self.ppm[row][col])
+		return np.array([x / self.max_color for x in self.ppm[row][col]])

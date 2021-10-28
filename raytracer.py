@@ -1,6 +1,5 @@
 import numpy as np
 from ray import Ray
-from utility import TextureMapper
 from utility import Parser
 from utility import custom_math as cm
 from materials import AreaLight
@@ -109,7 +108,9 @@ def compute_intersections(r, node):
 def compute_lighting(r, obj, point, norm):
 	global scene
 	if obj in scene.light_sources:  # The obj is an area light
-		# TODO: Textured lights?
+		if obj.texture is not None:
+			u, v = obj.get_uv(point)
+			return obj.texture.get_color(u, v)
 		return obj.material.color
 
 	illumination = np.array([0.0, 0.0, 0.0])
@@ -173,6 +174,9 @@ def trace_ray(r, spawn_depth):
 	if intersect_obj is None:
 		return None, None
 	if isinstance(intersect_obj.material, AreaLight):
+		if intersect_obj.texture is not None:
+			u, v = intersect_obj.get_uv(intersect_point)
+			return intersect_obj.texture.get_color(u, v), intersect_point
 		return intersect_obj.material.color, intersect_point
 
 	object_norm = intersect_obj.compute_normal(intersect_point)
@@ -227,7 +231,6 @@ def setup(global_vars, pixel):
 
 
 if __name__ == '__main__':
-	TextureMapper.create_texture("textures/Elite.ppm")
 	start_time = time.time()
 	render = [[0 for j in range(image_width)] for i in range(image_height)]
 	# TODO: programmatic scene generation

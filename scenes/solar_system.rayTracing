@@ -1,0 +1,9 @@
+CAMERA 0 0 0  0 0 30  0 1 0  60
+BACKGROUND 0 0 0
+AMBIENT .2 .2 .2
+SPHERE AREA_LIGHT   1 1 .6   TEXTURE CUSTOM textures/sun.ppm   0 0 0   5
+SPHERE TEXTURE CUSTOM textures/mercury.ppm   6 -2 1   .5
+SPHERE TEXTURE CUSTOM textures/venus.ppm   5 -6 4   .5
+SPHERE TEXTURE CUSTOM textures/earth.ppm   7 -7 5   .7
+SPHERE TEXTURE CUSTOM textures/mars.ppm   -8 -9 6   .5
+SPHERE TEXTURE CUSTOM textures/jupiter.ppm   -10 5 -4   2.5

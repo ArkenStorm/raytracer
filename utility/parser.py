@@ -19,23 +19,32 @@ class Parser:
 			print("Invalid material provided.\nValid Materials:")
 			print("\n\t".join([c for c in valid_materials.values()]))
 
+	@staticmethod
+	def determine_texture(line):
+		if line[0].lower() == "custom":
+			offset = 2
+			tex = TextureMapper.create_texture(line[1])
+		# TODO: Material texture, i.e. metal where it has an image AND transmissive/reflective properties?
+		else:
+			offset = 1
+			tex = None  # TODO: create some prebuilt textures?
+		return tex, offset
+
 	def determine_material(self, line):
 		mat, tex = Material(), None
 		if line[1].lower() == "custom":
 			start_index = 3
 			mat = self.custom_materials[int(line[2])]
 		elif line[1].lower() == "texture":
-			if line[2].lower() == "custom":
-				start_index = 4
-				tex = TextureMapper.create_texture(line[3])
-			# TODO: Material texture, i.e. metal where it has an image AND transmissive/reflective properties?
-			else:
-				start_index = 3
-				tex = None  # TODO: create some prebuilt textures?
+			tex, offset = Parser.determine_texture(line[2:])
+			start_index = 2 + offset
 
 		elif line[1].lower() == "area_light":
-			start_index = 5  # start after the light color
+			start_index = 5
 			area_light_color = np.array(list(map(float, line[2:5])))
+			if line[5].lower() == "texture":
+				tex, offset = Parser.determine_texture(line[6:])
+				start_index += 1 + offset
 			mat = Parser.get_material("AreaLight")(area_light_color)
 		else:
 			start_index = 2

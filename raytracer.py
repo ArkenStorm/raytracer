@@ -6,14 +6,14 @@ from materials import AreaLight
 from multiprocessing import Pool
 import time
 
-image_height = 300
-image_width = 300
+image_height = 500
+image_width = 500
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
 num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 1  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
 num_processes = 6
 scene, objects, camera = None, None, None
 render = None
@@ -56,7 +56,7 @@ def is_in_shadow(point, norm, light):
 	else:
 		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
 		shadow_direction /= np.linalg.norm(shadow_direction)
-	shadow_ray = Ray(point + epsilon * norm, shadow_direction, None)
+	shadow_ray = Ray(point + epsilon * shadow_direction, shadow_direction, None)
 	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(shadow_ray, scene.root)
 	if shadow_intersect is None:
 		return False

@@ -1,5 +1,5 @@
 class Material:
-	def __init__(self, kd=0, ks=0, ka=0, od=0, os=0, kgls=0, ri=None):
+	def __init__(self, kd=1.0, ks=0, ka=1.0, od=0, os=0, kgls=0, ri=None):
 		self.kd = kd  # diffuse coefficient;
 		self.ks = ks  # specular coefficient
 		self.ka = ka  # ambient coefficient

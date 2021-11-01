@@ -15,12 +15,6 @@ class TextureMapper:
 		width, height = map(int, image.readline().split(" "))
 		max_color = int(image.readline())
 		tex = []
-		# stupid gimp not exporting things according to ppm standard
-		# while row := image.readline().split(' '):
-		# 	if row[0] == "":
-		# 		break
-		# 	row_pixels = [(float(row[j]), float(row[j+1]), float(row[j+2])) for j in range(0, width * 3, 3)]
-		# 	tex.append(row_pixels)
 		rgb_vals = image.read()
 		rgb_vals = list(map(float, filter(lambda x: x != '', re.split(r'\s', rgb_vals))))
 		for i in range(0, len(rgb_vals), width * 3):

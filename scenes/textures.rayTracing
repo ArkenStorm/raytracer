@@ -1,0 +1,8 @@
+CAMERA 0 0 0  0 0 10  0 10 0  60
+BACKGROUND .3 .3 .3
+AMBIENT .2 .2 .2
+DIRECTIONAL_LIGHT   0 0 3   1 1 1
+TRIANGLE TEXTURE CUSTOM textures/illuminati.ppm   -2 -4 0   2 -4 0   0 0 0
+SPHERE TEXTURE CUSTOM textures/hexagon.ppm   0 3 0   2
+MATERIAL Kd 0.3  Ks 0.8  Ka 0.3  Od .2 .8 .2  Os 1.0 1.0 1.0  Kgls 8  Ri None
+TRIANGLE CUSTOM 0   3 4 -4   3 2 5   2 -2 0

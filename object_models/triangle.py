@@ -63,10 +63,9 @@ class Triangle(Object):
 		return
 
 	def get_uv(self, point):
-		# I have no idea what I'm doing
 		a, b, c = self.vertices
-		total_area = cm.cross_norm(b - a, c - a)
-		area_a = cm.cross_norm(c - b, point - b) / total_area
-		area_b = cm.cross_norm(a - c, point - c) / total_area
-		area_c = None
-		return None
+		total_area = np.linalg.norm(cm.cross_norm(b - a, c - a, False))
+		area_a = np.linalg.norm(cm.cross_norm(c - b, point - b, False)) / total_area
+		area_b = np.linalg.norm(cm.cross_norm(a - c, point - c, False)) / total_area
+		area_c = 1 - area_a - area_b
+		return np.array([0, 0]) * area_a + np.array([1, 0]) * area_b + np.array([.5, 1]) * area_c

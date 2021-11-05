@@ -60,7 +60,7 @@ class Triangle(Object):
 		final_point = p1 + (p2 - p1) * random.random()
 		shadow_direction = final_point - obj_point
 		shadow_direction /= np.linalg.norm(shadow_direction)
-		return
+		return shadow_direction
 
 	def get_uv(self, point):
 		a, b, c = self.vertices

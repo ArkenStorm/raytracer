@@ -1,9 +1,0 @@
-CAMERA 0 0 0  0 0 1  0 1 0 110
-BACKGROUND .2 .2 .2
-AMBIENT 0 0 0
-DIRECTIONAL_LIGHT 0 1 .2  1 1 1
-POINT_LIGHT .3 .4 .7  1 1 1
-MATERIAL Kd 0.05  Ks 0.2  Ka 0.1  Od .6 .1 .6  Os 1.0 1.0 1.0  Kgls 10  Ri 1.52
-SPHERE CUSTOM 0   0 0 0   .2
-MATERIAL Kd 0.9  Ks 0.3  Ka 0.1  Od .0 .1 .9  Os 1.0 1.0 1.0  Kgls 4  Ri None
-TRIANGLE CUSTOM 1   -2 .7 -1   0 -1 .2   2 .7 -1

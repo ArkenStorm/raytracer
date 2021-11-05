@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from ray import Ray
 from utility import Parser
 from utility import custom_math as cm
@@ -13,7 +14,7 @@ i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
 num_reflections = 1  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 3  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 7  # number of pixel subdivisions in each dimension
 num_processes = 6
 scene, objects, camera = None, None, None
 render = None
@@ -126,12 +127,33 @@ def compute_lighting(r, obj, point, norm):
 			light_color = light_source["color"]
 		light_vector = light_direction - 2 * norm * (np.dot(light_direction, norm))
 		light_reflection = light_vector / np.linalg.norm(light_vector)
-		# what should jitter factor be?
 		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, point, norm,
 												r.dir, light_reflection, is_in_shadow(point, norm, light_source))
 		illumination += obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
 	illumination = np.clip(illumination / len(scene.light_sources), 0.0, 1.0)
+	return illumination
+
+
+def trace_diffuse(illumination, r, obj, point, norm):
+	rand_angle = np.pi * 2 * random.random()
+	rand_val = random.random()
+	distance_mod = rand_val ** .5
+	# set up basis vectors
+	if abs(norm[0]) > abs(norm[1]):
+		e1 = np.array([norm[2], 0, -norm[0]]) / (norm[0] ** 2 + norm[2] ** 2) ** .5
+	else:
+		e1 = np.array([0, -norm[2], norm[1]]) / (norm[1] ** 2 + norm[2] ** 2) ** .5
+
+	e1 /= np.linalg.norm(e1)
+	e2 = cm.cross_norm(norm, e1)
+
+	new_dir = e1 * np.cos(rand_angle) * distance_mod + e2 * np.sin(rand_angle) * distance_mod + norm * (1 - rand_val) ** .5
+	new_dir /= np.linalg.norm(new_dir)
+	diffuse_ray = Ray(point + epsilon * norm, new_dir, None)
+	diffuse_color, diffuse_intersect = trace_ray(diffuse_ray, 0)
+	additive_color = diffuse_color if diffuse_color is not None else np.array([0, 0, 0])
+	illumination = np.clip(illumination + additive_color, 0.0, 1.0)
 	return illumination
 
 
@@ -182,13 +204,27 @@ def trace_ray(r, spawn_depth):
 	object_norm = intersect_obj.compute_normal(intersect_point)
 	illumination = compute_lighting(r, intersect_obj, intersect_point, object_norm)
 
-	# calculate and trace reflection ray
-	if intersect_obj.material.ks > 0 and spawn_depth > 0:
-		illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
+	transmission = intersect_obj.material.ri if intersect_obj.material.ri is not None else 0
+	probs = [intersect_obj.material.kd, intersect_obj.material.ks, transmission]
+	path = random.choices(['diffuse', 'specular', 'transmission'], weights=probs)
 
-	# calculate and trace refraction ray; spawn depth checked because of internal refraction
-	if intersect_obj.material.ri is not None and spawn_depth > 0:
-		illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
+	# if intersect_obj.material.ks > 0 and spawn_depth > 0:
+	# 	illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
+	#
+	# if intersect_obj.material.ri is not None and spawn_depth > 0:
+	# 	illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
+
+	if spawn_depth > 0:
+		if path[0] == "diffuse":
+			illumination = trace_diffuse(illumination, r, intersect_obj, intersect_point, object_norm)
+
+		elif path[0] == "specular" and intersect_obj.material.ks > 0:
+			# calculate and trace reflection ray
+			illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
+
+		elif path[0] == "transmission" and intersect_obj.material.ri is not None:
+			# calculate and trace refraction ray; spawn depth checked because of internal refraction
+			illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
 	return illumination, intersect_point
 

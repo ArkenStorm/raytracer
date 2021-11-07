@@ -7,15 +7,18 @@ from materials import AreaLight
 from multiprocessing import Pool
 import time
 
-image_height = 500
-image_width = 500
-epsilon = 0.000001
+# global constants
+image_height = 300
+image_width = 300
+epsilon = 0.00001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
 num_reflections = 2  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 9  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 1  # number of pixel subdivisions in each dimension
 num_processes = 6
+path_trace = False
+
 scene, objects, camera = None, None, None
 render = None
 
@@ -50,21 +53,17 @@ def compute_primary_ray(i, j):  # i, j are viewport points
 	return screen_to_world @ translate @ ray_screen  # ray in world space
 
 
-def is_in_shadow(point, norm, light):
-	if "object" in light:
-		light_normal = point - light["object"].get_position()
-		shadow_direction = light["object"].sample_surface(light["object"].get_position() - point, point, norm, light_normal)
-	else:
-		shadow_direction = light["direction"] - point if "direction" in light else light["pos"] - point
-		shadow_direction /= np.linalg.norm(shadow_direction)
+def is_in_shadow(point, light_position, shadow_direction):
 	shadow_ray = Ray(point + epsilon * shadow_direction, shadow_direction, None)
-	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(shadow_ray, scene.root)
+	shadow_obj, shadow_intersect, shadow_dist = compute_intersections(shadow_ray, scene.root, True)
 	if shadow_intersect is None:
+		return False
+	if cm.distance_3D(point, light_position) < cm.distance_3D(point, shadow_intersect):
 		return False
 	return False if isinstance(shadow_obj.material, AreaLight) else True
 
 
-def compute_intersections(r, node):
+def compute_intersections(r, node, skip_area_lights=False):
 	# TODO: add parent to node, try and be smart about traversal? Keep track of current node/space ray is in?
 
 	if node.first is None:  # both first and second will be None in this case
@@ -73,6 +72,8 @@ def compute_intersections(r, node):
 		final_obj = None
 
 		for obj in node.children:
+			if isinstance(obj.material, AreaLight) and skip_area_lights:
+				continue
 			point = obj.intersect(r)
 			if point is not None:
 				distance = cm.distance_3D(r.origin, point)
@@ -87,9 +88,9 @@ def compute_intersections(r, node):
 		o1, p1, d1 = None, None, None
 		o2, p2, d2 = None, None, None
 		if node.first.subspace.intersect(r) is not None:
-			o1, p1, d1 = compute_intersections(r, node.first)
+			o1, p1, d1 = compute_intersections(r, node.first, skip_area_lights)
 		if node.second.subspace.intersect(r) is not None:
-			o2, p2, d2 = compute_intersections(r, node.second)
+			o2, p2, d2 = compute_intersections(r, node.second, skip_area_lights)
 
 		# the ray intersects no objects in this subspace
 		if d1 is None and d2 is None:
@@ -119,23 +120,25 @@ def compute_lighting(r, obj, point, norm):
 	for light_source in scene.light_sources:
 		if "object" in light_source:
 			area_light = light_source["object"]
-			light_direction = area_light.sample_surface(area_light.get_position() - point, point, norm,
-														point - area_light.get_position())
+			light_position = area_light.get_position()
+			light_direction = area_light.sample_surface(light_position - point, point, norm, point - light_position)
 			light_color = light_source["object"].material.color
 		else:
-			light_direction = light_source["direction"] if "direction" in light_source else light_source["pos"]
+			light_position = light_source["direction"] if "direction" in light_source else light_source["pos"]
+			light_direction = light_position - point
 			light_color = light_source["color"]
 		light_vector = light_direction - 2 * norm * (np.dot(light_direction, norm))
 		light_reflection = light_vector / np.linalg.norm(light_vector)
 		obj_luminance = obj.luminance(scene.ambient_light, light_color, light_direction, point, norm,
-												r.dir, light_reflection, is_in_shadow(point, norm, light_source))
+												r.dir, light_reflection, is_in_shadow(point, light_position, light_direction))
 		illumination += obj_luminance  # obj_luminance should never be None
 	# average the illumination of all the lights shining on the object
-	illumination = np.clip(illumination / len(scene.light_sources), 0.0, 1.0)
+	light_divisor = len(scene.light_sources) if len(scene.light_sources) > 0 else 1
+	illumination = np.clip(illumination / light_divisor, 0.0, 1.0)
 	return illumination
 
 
-def trace_diffuse(illumination, r, obj, point, norm):
+def trace_diffuse(illumination, obj, point, norm):
 	rand_angle = np.pi * 2 * random.random()
 	rand_val = random.random()
 	distance_mod = rand_val ** .5
@@ -150,7 +153,7 @@ def trace_diffuse(illumination, r, obj, point, norm):
 
 	new_dir = e1 * np.cos(rand_angle) * distance_mod + e2 * np.sin(rand_angle) * distance_mod + norm * (1 - rand_val) ** .5
 	new_dir /= np.linalg.norm(new_dir)
-	diffuse_ray = Ray(point + 10 * epsilon * norm, new_dir, None)
+	diffuse_ray = Ray(point + epsilon * norm, new_dir, None)
 	diffuse_color, diffuse_intersect = trace_ray(diffuse_ray, 0)
 	additive_color = diffuse_color if diffuse_color is not None else np.array([0, 0, 0])
 	illumination = np.clip(illumination + (additive_color / distance_mod) * obj.material.kd, 0.0, 1.0)
@@ -204,24 +207,26 @@ def trace_ray(r, spawn_depth):
 	object_norm = intersect_obj.compute_normal(intersect_point)
 	illumination = compute_lighting(r, intersect_obj, intersect_point, object_norm)
 
-	# if intersect_obj.material.ks > 0 and spawn_depth > 0:
-	# 	illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
-	#
-	# if intersect_obj.material.ri is not None and spawn_depth > 0:
-	# 	illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
+	if path_trace:
+		if spawn_depth > 0:
+			transmission = intersect_obj.material.ri if intersect_obj.material.ri is not None else 0
+			probs = [intersect_obj.material.kd, intersect_obj.material.ks, transmission]
+			path = random.choices(['diffuse', 'specular', 'transmission'], weights=probs)
 
-	if spawn_depth > 0:
-		transmission = intersect_obj.material.ri if intersect_obj.material.ri is not None else 0
-		probs = [intersect_obj.material.kd, intersect_obj.material.ks, transmission]
-		path = random.choices(['diffuse', 'specular', 'transmission'], weights=probs)
+			if path[0] == "diffuse":
+				illumination = trace_diffuse(illumination, intersect_obj, intersect_point, object_norm)
 
-		if path[0] == "diffuse":
-			illumination = trace_diffuse(illumination, r, intersect_obj, intersect_point, object_norm)
+			elif path[0] == "specular" and intersect_obj.material.ks > 0:
+				illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
-		elif path[0] == "specular" and intersect_obj.material.ks > 0:
+			elif path[0] == "transmission" and intersect_obj.material.ri is not None:
+				illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
+
+	else:
+		if intersect_obj.material.ks > 0 and spawn_depth > 0:
 			illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
-		elif path[0] == "transmission" and intersect_obj.material.ri is not None:
+		if intersect_obj.material.ri is not None and spawn_depth > 0:
 			illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
 	return illumination, intersect_point

@@ -1,18 +1,18 @@
 CAMERA 0 0 0  0 0 10  0 10 0  60
 BACKGROUND .3 .3 .3
 AMBIENT .5 .5 .5
-SPHERE AREA_LIGHT   .8 .8 .8   0 0 5   .05
-MATERIAL Kd 0.7  Ks 0  Ka 0.5  Od .9 .9 .9  Os 1.0 1.0 1.0  Kgls 6  Ri None
+SPHERE AREA_LIGHT   .8 .8 .8   0 3 -5   .5
+MATERIAL Kd 0.9  Ks 0  Ka 0.5  Od .9 .9 .9  Os 1.0 1.0 1.0  Kgls 6  Ri None
 BOX CUSTOM 0   -7 -8 -10   -10 8 10
 BOX CUSTOM 0   7 -8 -10   10 8 10
-MATERIAL Kd 0.9  Ks 0  Ka 0.5  Od .4 .4 .4  Os 1.0 1.0 1.0  Kgls 6  Ri None
+MATERIAL Kd 0.1  Ks 0  Ka 0.5  Od .4 .4 .4  Os 1.0 1.0 1.0  Kgls 6  Ri None
 BOX CUSTOM 1   -7 8 -10   7 9 10
 BOX CUSTOM 1   -7 -8 -10   7 -9 10
-MATERIAL Kd 0.9  Ks 0  Ka 0.5  Od .1 .5 .8  Os 1.0 1.0 1.0  Kgls 6  Ri None
+MATERIAL Kd 0.1  Ks 0  Ka 0.5  Od .1 .5 .8  Os 1.0 1.0 1.0  Kgls 6  Ri None
 BOX CUSTOM 2   -7 -8 -10   7 8 -11
-MATERIAL Kd 0.5  Ks 0.1  Ka 0.5  Od .2 .5 .5  Os 1.0 1.0 1.0  Kgls 8  Ri None
+MATERIAL Kd 0.2  Ks 0.1  Ka 0.5  Od .2 .5 .5  Os 1.0 1.0 1.0  Kgls 8  Ri None
 SPHERE CUSTOM 3   -4 -5 -6   2
-MATERIAL Kd 0.8  Ks 0.6  Ka 0.2  Od .9 .1 .1  Os 1.0 1.0 1.0  Kgls 5  Ri None
+MATERIAL Kd 0  Ks 0.6  Ka 0.2  Od .9 .1 .1  Os 1.0 1.0 1.0  Kgls 1  Ri None
 SPHERE CUSTOM 4   4 -5 -6   2
-MATERIAL Kd 0.3  Ks 0.2  Ka 0.3  Od .1 .4 .4  Os 1.0 1.0 1.0  Kgls 8  Ri 2.76
+MATERIAL Kd 0.1  Ks 0.2  Ka 0.3  Od .1 .4 .4  Os 1.0 1.0 1.0  Kgls 8  Ri 2.76
 SPHERE CUSTOM 5   0 -4 0   1

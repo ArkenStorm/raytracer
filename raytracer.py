@@ -12,9 +12,9 @@ image_width = 500
 epsilon = 0.000001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
-num_reflections = 1  # max ray tree depth
+num_reflections = 2  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 7  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 9  # number of pixel subdivisions in each dimension
 num_processes = 6
 scene, objects, camera = None, None, None
 render = None
@@ -150,10 +150,10 @@ def trace_diffuse(illumination, r, obj, point, norm):
 
 	new_dir = e1 * np.cos(rand_angle) * distance_mod + e2 * np.sin(rand_angle) * distance_mod + norm * (1 - rand_val) ** .5
 	new_dir /= np.linalg.norm(new_dir)
-	diffuse_ray = Ray(point + epsilon * norm, new_dir, None)
+	diffuse_ray = Ray(point + 10 * epsilon * norm, new_dir, None)
 	diffuse_color, diffuse_intersect = trace_ray(diffuse_ray, 0)
 	additive_color = diffuse_color if diffuse_color is not None else np.array([0, 0, 0])
-	illumination = np.clip(illumination + additive_color, 0.0, 1.0)
+	illumination = np.clip(illumination + (additive_color / distance_mod) * obj.material.kd, 0.0, 1.0)
 	return illumination
 
 
@@ -204,10 +204,6 @@ def trace_ray(r, spawn_depth):
 	object_norm = intersect_obj.compute_normal(intersect_point)
 	illumination = compute_lighting(r, intersect_obj, intersect_point, object_norm)
 
-	transmission = intersect_obj.material.ri if intersect_obj.material.ri is not None else 0
-	probs = [intersect_obj.material.kd, intersect_obj.material.ks, transmission]
-	path = random.choices(['diffuse', 'specular', 'transmission'], weights=probs)
-
 	# if intersect_obj.material.ks > 0 and spawn_depth > 0:
 	# 	illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 	#
@@ -215,15 +211,17 @@ def trace_ray(r, spawn_depth):
 	# 	illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
 	if spawn_depth > 0:
+		transmission = intersect_obj.material.ri if intersect_obj.material.ri is not None else 0
+		probs = [intersect_obj.material.kd, intersect_obj.material.ks, transmission]
+		path = random.choices(['diffuse', 'specular', 'transmission'], weights=probs)
+
 		if path[0] == "diffuse":
 			illumination = trace_diffuse(illumination, r, intersect_obj, intersect_point, object_norm)
 
 		elif path[0] == "specular" and intersect_obj.material.ks > 0:
-			# calculate and trace reflection ray
 			illumination = trace_reflections(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
 		elif path[0] == "transmission" and intersect_obj.material.ri is not None:
-			# calculate and trace refraction ray; spawn depth checked because of internal refraction
 			illumination = trace_refractions(illumination, r, intersect_obj, intersect_point, object_norm, spawn_depth)
 
 	return illumination, intersect_point

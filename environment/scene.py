@@ -1,6 +1,5 @@
 from object_models import Box
 from utility import Node
-import math
 
 
 class Scene:
@@ -12,7 +11,7 @@ class Scene:
 		self.camera = camera
 		self.custom_materials = custom_materials
 		self.root = None
-		self.subspace_tree_depth = 2  # math.floor(math.log2(len(objects)))
+		self.subspace_tree_depth = 4  # math.floor(math.log2(len(objects)))
 		self.subspace_object_count = 4
 		# TODO: set default scene material
 

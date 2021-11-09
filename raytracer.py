@@ -8,16 +8,16 @@ from multiprocessing import Pool
 import time
 
 # global constants
-image_height = 300
-image_width = 300
+image_height = 500
+image_width = 500
 epsilon = 0.00001
 i_min, j_min = 0, 0
 i_max, j_max = image_height - 1, image_width - 1
-num_reflections = 2  # max ray tree depth
+num_reflections = 3  # max ray tree depth
 min_light_val = 0.05  # ????
-pixel_subdivisions = 1  # number of pixel subdivisions in each dimension
+pixel_subdivisions = 9  # number of pixel subdivisions in each dimension
 num_processes = 6
-path_trace = False
+path_trace = True
 
 scene, objects, camera = None, None, None
 render = None
